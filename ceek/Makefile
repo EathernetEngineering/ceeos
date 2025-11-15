@@ -40,7 +40,7 @@ $(objtree)/%.S.o: $(srctree)/ceek/%.S $(HEADER_DEP)
 
 .PHONY: clean mrproper
 clean:
-	rm -rf $(OBJS) ceek
+	rm -rf $(OBJS) ceek.x86_64
 
 mrproper: clean
 
