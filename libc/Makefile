@@ -16,11 +16,16 @@ CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
 COMMON_SOURCES := string.c
+COMMON_HEADERS := string.h
 LIBC_SOURCES := $(COMMON_SOURCES)
+LIBC_HEADERS := $(COMMON_HEADERS)
 LIBK_SOURCES := $(COMMON_SOURCES)
+LIBK_HEADERS := $(COMMON_HEADERS)
 
 LIBC_OBJECTS := $(addprefix $(objtree)/,$(addsuffix .o,$(LIBC_SOURCES)))
+LIBC_HEADER_DEP := $(addprefix $(srctree)/libc/,$(LIBC_HEADERS))
 LIBK_OBJECTS := $(addprefix $(objtree)/,$(addsuffix .o,$(LIBK_SOURCES)))
+LIBK_HEADER_DEP := $(addprefix $(srctree)/libc/,$(LIBK_HEADERS))
 
 .PHONY: all libc libk
 all: libc.a libk.a
@@ -34,7 +39,7 @@ libk.a: $(LIBK_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(AR) rcs $@ $(LIBK_OBJECTS)
 
-$(objtree)/%.o: $(srctree)/libc/%
+$(objtree)/%.c.o: $(srctree)/libc/%.c $(LIBC_HEADER_DEP) $(LIBK_HEADER_DEP)
 	@mkdir -p $(dir $@)
 	$(CC) -ffreestanding -c $(CFLAGS) $< -o $@
 

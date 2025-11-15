@@ -15,9 +15,11 @@ TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
-SRCS := entry.c arch/x86/multiboot.S arch/x86/start.S arch/x86/boot_gdt.S
+SRCS := entry.c io/kprint.c io/serial.c arch/x86/multiboot.S arch/x86/start.S arch/x86/boot_gdt.S
+HEADERS := io/kprint.h io/serial.h io/port.h
 OBJS := $(addprefix $(objtree)/,$(addsuffix .o,$(SRCS)))
-LIBS := libk
+HEADER_DEP := $(addprefix $(srctree)/ceek/,$(HEADERS))
+LIBS := libk.a
 
 .PHONY: all ceek
 all: ceek.x86_64
@@ -26,13 +28,13 @@ ceek: ceek.x86_64
 ceek.x86_64: $(OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) \
-		-Wl,-T,$(srctree)/ceek/link.ld,-z,max-page-size=4096 -o $@ $(OBJS)
+		-Wl,-T,$(srctree)/ceek/link.ld,-z,max-page-size=4096 -o $@ $(OBJS) $(LIBS)
 
-$(objtree)/%.c.o: $(srctree)/ceek/%.c
+$(objtree)/%.c.o: $(srctree)/ceek/%.c $(HEADER_DEP) 
 	@mkdir -p $(dir $@)
 	$(CC) -ffreestanding $(CFLAGS) -c -o $@ $<
 
-$(objtree)/%.S.o: $(srctree)/ceek/%.S
+$(objtree)/%.S.o: $(srctree)/ceek/%.S $(HEADER_DEP)
 	@mkdir -p $(dir $@)
 	$(CC) -ffreestanding $(CFLAGS) -c -o $@ $<
 
