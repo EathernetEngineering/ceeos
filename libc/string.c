@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#include "string.h"
+#include <string.h>
 
 unsigned long strlen(const char *dst) {
 	unsigned long i = 0;

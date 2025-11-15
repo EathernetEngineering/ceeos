@@ -9,34 +9,45 @@ ifneq ("$(origin srctree)","command line")
 $(error srctree not provided)
 endif
 
-objtree := $(abspath $(O))
+ifneq ("$(origin objtree)","command line")
+$(error objtree not provided)
+endif
+
+this-objtree := $(objtree)/$(O)
+this-srctree := $(srctree)/ceek
 
 TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
-SRCS := entry.c io/kprint.c io/serial.c arch/x86/multiboot.S arch/x86/start.S arch/x86/boot_gdt.S
-HEADERS := io/kprint.h io/serial.h io/port.h
-OBJS := $(addprefix $(objtree)/,$(addsuffix .o,$(SRCS)))
-HEADER_DEP := $(addprefix $(srctree)/ceek/,$(HEADERS))
+SRCS := entry.c panic.c io/kprint.c io/serial.c arch/x86/multiboot.S arch/x86/start.S \
+	arch/x86/boot_gdt.S arch/x86/isr_stubs.S arch/x86/idt.c arch/x86/gdt.c
+HEADERS := panic.h io/kprint.h io/serial.h io/port.h arch/x86/gdt.h arch/x86/idt.h
+
+OBJS := $(addprefix $(this-objtree)/,$(addsuffix .o,$(SRCS)))
 LIBS := libk.a
+INCLUDES := $(this-srctree) $(srctree)/libc/libk/include
 
 .PHONY: all ceek
-all: ceek.x86_64
-ceek: ceek.x86_64
+all: $(objtree)/ceek.x86_64
+ceek: $(objtree)/ceek.x86_64
 
-ceek.x86_64: $(OBJS)
+$(objtree)/ceek.x86_64: $(OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) \
-		-Wl,-T,$(srctree)/ceek/link.ld,-z,max-page-size=4096 -o $@ $(OBJS) $(LIBS)
+		-Wl,-T,$(this-srctree)/link.ld,-z,max-page-size=4096 -o $@ $(OBJS) $(LIBS)
 
-$(objtree)/%.c.o: $(srctree)/ceek/%.c $(HEADER_DEP) 
-	@mkdir -p $(dir $@)
-	$(CC) -ffreestanding $(CFLAGS) -c -o $@ $<
+$(this-objtree)/%.c.o: $(this-srctree)/%.c
+	@mkdir -p $(dir $@) $(objtree)/.deps
+	$(CC) -ffreestanding $(CFLAGS) \
+		-MF '$(objtree)/.deps/$(subst .o,,$(notdir $@)).d' \
+		-c $(addprefix -I,$(INCLUDES)) -o $@ $<
 
-$(objtree)/%.S.o: $(srctree)/ceek/%.S $(HEADER_DEP)
-	@mkdir -p $(dir $@)
-	$(CC) -ffreestanding $(CFLAGS) -c -o $@ $<
+$(this-objtree)/%.S.o: $(this-srctree)/%.S
+	@mkdir -p $(dir $@) $(objtree)/.deps
+	$(CC) -ffreestanding $(CFLAGS) \
+		-MF '$(objtree)/.deps/$(subst .o,,$(notdir $@)).d' \
+		-c $(addprefix -I,$(INCLUDES)) -o $@ $<
 
 .PHONY: clean mrproper
 clean:

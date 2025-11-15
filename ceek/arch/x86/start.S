@@ -12,6 +12,8 @@
 start:
 _start:
 	jmp multiboot_entry
+.size start,.-multiboot_entry
+.size _start,.-multiboot_entry
 .align 8
 .global multiboot_entry
 .type multiboot_entry,@function
@@ -110,21 +112,22 @@ multiboot_entry:
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
-	ljmp $LONG_MODE_TRANSITION_GDT_CODE64_INDEX, $.Lentry64
+	ljmp $LONG_MODE_TRANSITION_GDT_CODE64_INDEX, $4f
 
 
 .align 8
 .code64
-.Lentry64:
+4:
 	movl (mb_magic), %eax
 	movl %eax, %edi
 	movl (mb_info_addr), %eax
 	movl %eax, %esi
 	call kernel_main
-1:
+5:
 	hlt
-	jmp 1b
+	jmp 5b
 	.cfi_endproc
+.size multiboot_entry,.-multiboot_entry
 
 .section .bss
 .align 16

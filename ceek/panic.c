@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
+#include <panic.h>
 #include <io/serial.h>
 
-void kprint(const char *msg) {
-	serial_write(msg);
+void panic(void) {
+	serial_write("!!! PANIC");
+	fatal_spin();
 }
 

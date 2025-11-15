@@ -9,39 +9,46 @@ ifneq ("$(origin srctree)","command line")
 $(error srctree not provided)
 endif
 
-objtree := $(abspath $(O))
+ifneq ("$(origin objtree)","command line")
+$(error objtree not provided)
+endif
+
+this-objtree := $(objtree)/$(O)
+this-srctree := $(srctree)/ceek
 
 TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
 COMMON_SOURCES := string.c
-COMMON_HEADERS := string.h
+COMMON_HEADERS := string.h stdint.h
 LIBC_SOURCES := $(COMMON_SOURCES)
 LIBC_HEADERS := $(COMMON_HEADERS)
 LIBK_SOURCES := $(COMMON_SOURCES)
 LIBK_HEADERS := $(COMMON_HEADERS)
 
-LIBC_OBJECTS := $(addprefix $(objtree)/,$(addsuffix .o,$(LIBC_SOURCES)))
-LIBC_HEADER_DEP := $(addprefix $(srctree)/libc/,$(LIBC_HEADERS))
-LIBK_OBJECTS := $(addprefix $(objtree)/,$(addsuffix .o,$(LIBK_SOURCES)))
-LIBK_HEADER_DEP := $(addprefix $(srctree)/libc/,$(LIBK_HEADERS))
+INCLUDES := $(srctree)/libc
+
+LIBC_OBJECTS := $(addprefix $(this-objtree)/,$(addsuffix .o,$(LIBC_SOURCES)))
+LIBK_OBJECTS := $(addprefix $(this-objtree)/,$(addsuffix .o,$(LIBK_SOURCES)))
 
 .PHONY: all libc libk
 all: libc.a libk.a
-libc: libc.a
-libk: libk.a
+libc: $(objtree)/libc.a
+libk: $(objtree)/libk.a
 
-libc.a: $(LIBC_OBJECTS)
+$(objtree)/libc.a: $(LIBC_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(AR) rcs $@ $(LIBC_OBJECTS)
-libk.a: $(LIBK_OBJECTS)
+$(objtree)/libk.a: $(LIBK_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(AR) rcs $@ $(LIBK_OBJECTS)
 
-$(objtree)/%.c.o: $(srctree)/libc/%.c $(LIBC_HEADER_DEP) $(LIBK_HEADER_DEP)
-	@mkdir -p $(dir $@)
-	$(CC) -ffreestanding -c $(CFLAGS) $< -o $@
+$(this-objtree)/%.c.o: $(srctree)/libc/%.c
+	@mkdir -p $(dir $@) $(objtree)/.deps
+	$(CC) -ffreestanding $(CFLAGS) \
+		-MF '$(objtree)/.deps/$(subst .o,,$(notdir $@)).d' \
+		-c $(addprefix -I,$(INCLUDES)) -o $@ $<
 
 .PHONY: clean mrproper
 clean:

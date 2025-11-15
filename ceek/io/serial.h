@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#include "port.h"
+#include <arch/x86/port.h>
 
 static inline void serial_out(char c) {
 	outb(c, 0x3F8);
