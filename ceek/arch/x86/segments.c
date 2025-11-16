@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#include <arch/x86/gdt.h>
+#include <arch/x86/segments.h>
 
 void init_gdt(void)
 {

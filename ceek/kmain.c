@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#include <arch/x86/gdt.h>
-#include <arch/x86/idt.h>
+#include <arch/x86/segments.h>
+#include <arch/x86/interrupts.h>
 #include <io/kprint.h>
 
 #include <panic.h>

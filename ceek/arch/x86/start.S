@@ -12,8 +12,8 @@
 start:
 _start:
 	jmp multiboot_entry
-.size start,.-multiboot_entry
-.size _start,.-multiboot_entry
+.size start,.-start
+.size _start,.-_start
 .align 8
 .global multiboot_entry
 .type multiboot_entry,@function
@@ -124,6 +124,7 @@ multiboot_entry:
 	movl %eax, %esi
 	call kernel_main
 5:
+	cli
 	hlt
 	jmp 5b
 	.cfi_endproc
