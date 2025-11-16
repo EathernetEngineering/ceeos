@@ -67,5 +67,18 @@ _Static_assert(sizeof(uint64_t) == 8, "uint64_t must be 64 bits");
 _Static_assert(sizeof(size_t) == sizeof(ssize_t),
 			   "size_t and ssize_t have mismatched sizes");
 
+#define INT8_MAX      127
+#define INT8_MIN    (-INT8_MAX - 1)
+#define UINT8_MAX     255
+#define INT16_MAX     32767
+#define INT16_MIN   (-INT16_MAX - 1)
+#define UINT16_MAX    65535
+#define INT32_MAX     2147483647
+#define INT32_MIN   (-INT32_MAX - 1)
+#define UINT32_MAX    4294967295
+#define INT64_MAX     9223372036854775807l
+#define INT64_MIN   (-INT64_MAX - 1)
+#define UINT64_MAX    18446744073709551615ul
+
 #endif
 

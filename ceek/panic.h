@@ -9,9 +9,13 @@ void panic(void);
 
 static inline void __attribute__((__noreturn__)) fatal_spin(void)
 {
-	asm volatile ("cli");
-	for (;;)
-		asm volatile ("hlt");
+	asm volatile (
+		"cli\n"
+		"1:\n\t"
+		"hlt\n\t"
+		"jmp 1b");
+
+	__builtin_unreachable();
 }
 
 #endif

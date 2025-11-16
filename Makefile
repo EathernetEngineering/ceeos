@@ -147,7 +147,7 @@ LDFLAGS := -nostdlib -nostartfiles
 ifeq ("$(BUILD_TYPE)","Release")
 CFLAGS += -O2
 else ifeq ("$(BUILD_TYPE)","Debug")
-CFLAGS += -ggdb
+CFLAGS += -ggdb -Og -fno-omit-frame-pointer
 endif
 
 export HOSTCC HOSTCXX HOSTPKG_CONFIG AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP

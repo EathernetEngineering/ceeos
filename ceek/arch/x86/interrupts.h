@@ -6,6 +6,15 @@
 
 #include <stdint.h>
 
+#define IDT_GATE_TYPE_INT  0x0E
+#define IDT_GATE_TYPE_TRAP 0x0F
+
+#define IDT_GATE_DPL_0         0x00
+#define IDT_GATE_DPL_1         0x20
+#define IDT_GATE_DPL_2         0x40
+#define IDT_GATE_DPL_3         0x60
+#define IDT_GATE_P             0x80
+
 struct interrupt_frame {
 	uint64_t rip;
 	uint64_t cs;
@@ -26,7 +35,8 @@ struct isr_context {
 struct idte {
 	uint16_t offset_lower;
 	uint16_t segment_selector;
-	uint16_t flags;
+	uint8_t ist;
+	uint8_t flags;
 	uint16_t offset_middle;
 	uint32_t offset_upper;
 	uint32_t reserved;
@@ -41,19 +51,18 @@ typedef void(*interrupt_stub)(void);
 
 static inline interrupt_stub idt_get_offset(const struct idte *entry)
 {
-	interrupt_stub offset;
-	offset = (interrupt_stub)(
-		((uintptr_t)entry->offset_upper << 32) &
-		((uintptr_t)entry->offset_middle << 16) &
-		((uintptr_t)entry->offset_lower));
-	return offset;
+	uintptr_t offset = 0;
+	offset |= (uintptr_t)entry->offset_upper  << 32;
+	offset |= (uintptr_t)entry->offset_middle << 16;
+	offset |= (uintptr_t)entry->offset_lower;
+	return (interrupt_stub)offset;
 }
 
 static inline struct idte *idt_set_offset(struct idte *entry, interrupt_stub ptr)
 {
-	entry->offset_upper = (uint32_t)(((uintptr_t)ptr & ~0xFFFFFFFFull) >> 32);
-	entry->offset_middle = (uint32_t)(((uintptr_t)ptr & 0xFFF0000Full) >> 16);
-	entry->offset_lower = (uint32_t)(((uintptr_t)ptr & 0xFFFFull));
+	entry->offset_upper  = (uint32_t)((uintptr_t)ptr >> 32);
+	entry->offset_middle = (uint16_t)((uintptr_t)ptr >> 16);
+	entry->offset_lower  = (uint16_t)(uintptr_t)ptr;
 	return entry;
 }
 

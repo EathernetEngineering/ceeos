@@ -6,8 +6,9 @@ SECTIONS
 	.text BLOCK(4K) : ALIGN(4K)
 	{
 		. = ALIGN(8);
-		KEEP(*(.multiboot))
 		_text_start = .;
+		KEEP(*(.multiboot))
+		. = ALIGN(8);
 		*(.text)
 		_text_end = .;
 	}

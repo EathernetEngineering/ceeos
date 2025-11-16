@@ -15,7 +15,7 @@
 .section .rodata
 .global long_mode_transition_gdt_descriptor
 long_mode_transition_gdt_descriptor:
-	.short long_mode_transition_gdt_end - long_mode_transition_gdt_start
+	.short long_mode_transition_gdt_end - long_mode_transition_gdt_start - 1
 	.quad long_mode_transition_gdt_start
 long_mode_transition_gdt_start:
 long_mode_transition_gdt_null_descriptor:

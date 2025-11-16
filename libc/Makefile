@@ -21,7 +21,7 @@ CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
 COMMON_SOURCES := string.c
-COMMON_HEADERS := string.h stdint.h
+COMMON_HEADERS := string.h stdint.h limits.h
 LIBC_SOURCES := $(COMMON_SOURCES)
 LIBC_HEADERS := $(COMMON_HEADERS)
 LIBK_SOURCES := $(COMMON_SOURCES)
