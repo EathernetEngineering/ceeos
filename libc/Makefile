@@ -20,8 +20,8 @@ TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
-COMMON_SOURCES := string.c
-COMMON_HEADERS := string.h stdint.h limits.h
+COMMON_SOURCES := string.c ctype.c atoi.c itoa.c
+COMMON_HEADERS := string.h stdint.h limits.h ctype.h stdlib.h atoi.h itoa.h endian.h bits/endian.h
 LIBC_SOURCES := $(COMMON_SOURCES)
 LIBC_HEADERS := $(COMMON_HEADERS)
 LIBK_SOURCES := $(COMMON_SOURCES)
@@ -53,6 +53,8 @@ $(this-objtree)/%.c.o: $(srctree)/libc/%.c
 .PHONY: clean mrproper
 clean:
 	rm -rf $(LIBC_OBJECTS) $(LIBK_OBJECTS) libc.a libk.a
+
+-include $(DEPFILES)
 
 mrproper: clean
 	

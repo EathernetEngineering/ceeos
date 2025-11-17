@@ -54,5 +54,7 @@ $(this-objtree)/%.S.o: $(this-srctree)/%.S
 clean:
 	rm -rf $(OBJS) ceek.x86_64
 
+-include $(DEPFILES)
+
 mrproper: clean
 

@@ -6,14 +6,42 @@
 
 #include <stdint.h>
 
-#define IDT_GATE_TYPE_INT  0x0E
-#define IDT_GATE_TYPE_TRAP 0x0F
 
-#define IDT_GATE_DPL_0         0x00
-#define IDT_GATE_DPL_1         0x20
-#define IDT_GATE_DPL_2         0x40
-#define IDT_GATE_DPL_3         0x60
-#define IDT_GATE_P             0x80
+enum int_gate_flags {
+	IDT_GATE_TYPE_INT  = 0x0E,
+	IDT_GATE_TYPE_TRAP = 0x0F,
+
+	IDT_GATE_DPL_0         = 0x00,
+	IDT_GATE_DPL_1         = 0x20,
+	IDT_GATE_DPL_2         = 0x40,
+	IDT_GATE_DPL_3         = 0x60,
+	IDT_GATE_P             = 0x80
+};
+
+enum exception_vec {
+	EXCEPTION_DE = 0x00,
+	EXCEPTION_DB = 0x01,
+	EXCEPTION_BP = 0x03,
+	EXCEPTION_OF = 0x04,
+	EXCEPTION_BR = 0x05,
+	EXCEPTION_UD = 0x06,
+	EXCEPTION_NM = 0x07,
+	EXCEPTION_DF = 0x08,
+	EXCEPTION_TS = 0x0A,
+	EXCEPTION_NP = 0x0B,
+	EXCEPTION_SS = 0x0C,
+	EXCEPTION_GP = 0x0D,
+	EXCEPTION_PF = 0x0E,
+	EXCEPTION_MF = 0x10,
+	EXCEPTION_AC = 0x11,
+	EXCEPTION_MC = 0x12,
+	EXCEPTION_XM = 0x13,
+	EXCEPTION_VE = 0x14,
+	EXCEPTION_CP = 0x15,
+	EXCEPTION_HV = 0x1C,
+	EXCEPTION_VC = 0x1D,
+	EXCEPTION_SX = 0x1E
+};
 
 struct interrupt_frame {
 	uint64_t rip;
@@ -68,7 +96,7 @@ static inline struct idte *idt_set_offset(struct idte *entry, interrupt_stub ptr
 
 static inline void set_idtr(struct idt_descriptor *d)
 {
-	asm volatile ("lidt %0" :: "m"(*d));
+	__asm__ volatile ("lidt %0" :: "m"(*d));
 }
 
 void init_idt(void);

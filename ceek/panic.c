@@ -3,9 +3,11 @@
 
 #include <panic.h>
 #include <io/serial.h>
+#include <string.h>
 
 void panic(void) {
-	serial_write("!!! PANIC");
+	static const char *const msg = "!!! PANIC";
+	serial_write(msg, strlen(msg));
 	fatal_spin();
 }
 

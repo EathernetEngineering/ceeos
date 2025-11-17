@@ -104,13 +104,5 @@ uint16_t gdt_get_user_identity_code_segment(void);
 extern void set_gdtr(struct gdt_descriptor *d, uint16_t cs, uint16_t ss,
 					 uint16_t ds, uint16_t es);
 
-static inline void set_cs(uint16_t idx)
-{
-	asm volatile (
-		"ljmp %0:1f\n"
-		"1:"
-		:: "m"(idx));
-}
-
 #endif
 

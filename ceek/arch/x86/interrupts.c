@@ -5,11 +5,12 @@
 #include <arch/x86/segments.h>
 #include <arch/x86/port.h>
 #include <panic.h>
+#include <io/kprint.h>
 
 #include <string.h>
 
 static struct idt_descriptor idt_desc;
-static struct idte idt[64];
+static struct idte idt[UINT8_MAX];
 
 void init_idt(void)
 {
@@ -116,6 +117,11 @@ void init_idt(void)
 	idt_set_offset(&entry, irq47);
 	memcpy(&idt[47], &entry, sizeof(entry));
 
+	idt_set_offset(&entry, isr255);
+	for (int32_t i = 48; i < UINT8_MAX; i++) {
+		memcpy(&idt[i], &entry, sizeof(entry));
+	}
+
 	uint8_t mask = 0;
 	inb(&mask, 0x21);
 	outb(0x21, mask | 0x01);  // disable IRQ0
@@ -127,12 +133,105 @@ void init_idt(void)
 
 void isr_handler(const struct isr_context *ctx)
 {
-	(void)ctx;
-	panic();
+	switch (ctx->interrupt_num) {
+		case EXCEPTION_DE:
+			kprint("Divide by zero fault caught.\r\n");
+			break;
+
+		case EXCEPTION_DB:
+			kprint("Debug trap caught.\r\n");
+			break;
+
+		case EXCEPTION_BP:
+			kprint("Divide by zero fault caught.\r\n");
+			break;
+
+		case EXCEPTION_OF:
+			kprint("Divide by zero fault caught.\r\n");
+			break;
+
+		case EXCEPTION_BR:
+			kprint("Bounds range fault caught.\r\n");
+			break;
+
+		case EXCEPTION_UD:
+			kprint("Invalid opcode fault caught.\r\n");
+			break;
+
+		case EXCEPTION_NM:
+			kprint("Device not availible fault caught.\r\n");
+			break;
+
+		case EXCEPTION_DF:
+			kprint("!!! Double fault\r\n");
+			panic();
+			break;
+
+		case EXCEPTION_TS:
+			kprint("Invalid TSS fault caught.\r\n");
+			break;
+
+		case EXCEPTION_NP:
+			kprint("Segment not present fault caught.\r\n");
+			break;
+
+		case EXCEPTION_SS:
+			kprint("Stack-segemtnt fault caught.\r\n");
+			break;
+
+		case EXCEPTION_GP:
+			kprint("General protection fault caught.\r\n");
+			break;
+
+		case EXCEPTION_PF:
+			kprint("Page fault caught.\r\n");
+			break;
+
+		case EXCEPTION_MF:
+			kprint("x87 floating point exception caught.\r\n");
+			break;
+
+		case EXCEPTION_AC:
+			kprint("Alignment check fault caught.\r\n");
+			break;
+
+		case EXCEPTION_MC:
+			kprint("!!! Machine check.\r\n");
+			panic();
+			break;
+
+		case EXCEPTION_XM:
+			kprint("SIMD floating point fault caught.\r\n");
+			break;
+
+		case EXCEPTION_VE:
+			kprint("Virtualization exception caught.\r\n");
+			break;
+
+		case EXCEPTION_CP:
+			kprint("Control protection ecxception caught.\r\n");
+			break;
+
+		case EXCEPTION_HV:
+			kprint("Hypervisor injection exception caught.\r\n");
+			break;
+
+		case EXCEPTION_VC:
+			kprint("VMM communication exception caught.\r\n");
+			break;
+
+		case EXCEPTION_SX:
+			kprint("Security exception caught.\r\n");
+			break;
+
+		default:
+			kprint("Unknown isr called");
+	}
 }
 
 void irq_handler(const struct isr_context *ctx)
 {
+	kprint("Caught IRQ");
 	(void)ctx;
 }
 

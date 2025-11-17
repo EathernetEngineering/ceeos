@@ -3,11 +3,11 @@
 
 #include <io/serial.h>
 
-void serial_write(const char *s)
+void serial_write(const void *data, size_t size)
 {
-	while (*s) {
-		serial_out(*s);
-		++s;
+	while (size--) {
+		serial_out(*(char *)data);
+		data = (char *)((uintptr_t)data + 1);
 	}
 }
 

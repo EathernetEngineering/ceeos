@@ -3,9 +3,9 @@
 
 #include <string.h>
 
-unsigned long strlen(const char *dst) {
+unsigned long strlen(const char *s) {
 	unsigned long i = 0;
-	while (dst[i] != '\0')
+	while (s[i] != '\0')
 		i++;
 	return i;
 }
@@ -37,7 +37,7 @@ void *memcpy(void *restrict dst, const void *restrict src, unsigned long len)
 	if (dst == src)
 		return dst;
 	for (unsigned long i = 0; i < len; i++) {
-		*(char *)(dst + i) = *(char *)(src + i);
+		*((char *)dst + i) = *((char *)src + i);
 	}
 	return dst;
 }
@@ -47,15 +47,15 @@ void *memmove(void *dst, const void *src, unsigned long len)
 	if (dst == src)
 		return dst;
 	for (unsigned long i = 0; i < len; i++) {
-		*(char *)(dst + i) = *(char *)(src + i);
+		*((char *)dst + i) = *((char *)src + i);
 	}
 	return dst;
 }
 
-void *memset(void *dst, int val, unsigned long len)
+void *memset(void *dst, char val, unsigned long len)
 {
 	for (unsigned long i = 0; i < len; i++)
-		*(char *)(dst + i) = (char)val;
+		*((char *)dst + i) = (char)val;
 	return dst;
 }
 
@@ -84,9 +84,9 @@ int memcmp(const void *lhs, const void *rhs, unsigned long n)
 	if (lhs == rhs)
 		return 0;
 	unsigned long i = 0;
-	while (*(char *)(lhs + i) == *(char *)(rhs + i) && i < n)
+	while (*((char *)lhs + i) == *((char *)rhs + i) && i < n)
 		i++;
-	return *(char *)(lhs + i) - *(char *)(rhs + i);
+	return *((char *)lhs + i) - *((char *)rhs + i);
 }
 
 char *strcat(char *restrict dst, const char *restrict src)

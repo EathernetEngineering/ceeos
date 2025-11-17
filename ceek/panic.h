@@ -9,7 +9,7 @@ void panic(void);
 
 static inline void __attribute__((__noreturn__)) fatal_spin(void)
 {
-	asm volatile (
+	__asm__ volatile (
 		"cli\n"
 		"1:\n\t"
 		"hlt\n\t"

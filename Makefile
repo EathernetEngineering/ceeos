@@ -141,7 +141,10 @@ AWK             := awk
 BASH            := bash
 
 DEPFLAGS := -MMD -MD -MP
-CFLAGS := -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -fno-exceptions -fno-asynchronous-unwind-tables -Wall -Wextra -Werror $(DEPFLAGS)
+WARNINGFLAGS := -Wall -Wextra -Werror -Wpedantic -Wswitch-enum
+CFLAGS := -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -fno-builtin \
+		  -fno-exceptions -fno-asynchronous-unwind-tables -std=c11 \
+		  $(DEPFLAGS) $(WARNINGFLAGS)
 LDFLAGS := -nostdlib -nostartfiles
 
 ifeq ("$(BUILD_TYPE)","Release")
@@ -151,7 +154,7 @@ CFLAGS += -ggdb -Og -fno-omit-frame-pointer
 endif
 
 export HOSTCC HOSTCXX HOSTPKG_CONFIG AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP
-export AWK BASH DEPFLAGS CFLAGS LDFLAGS
+export AWK BASH DEPFLAGS WARNINGFLAGS CFLAGS LDFLAGS
 
 PHONY += outputmakefile
 ifdef building_out_of_srctree
@@ -229,8 +232,8 @@ $(MRPROPER_SUBPROJECTS):
 		O=$(subst mrproper-,,$@) \
 		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" mrproper
 
-DEPFILES := $(wildcard $(KBUILD_OUTPUT)/.deps/*.d)
-include $(DEPFILES)
+export DEPFILES := $(abspath $(wildcard $(KBUILD_OUTPUT)/.deps/*.d))
+-include $(DEPFILES)
 
 endif # mixed-build
 endif # compile_commands-build
