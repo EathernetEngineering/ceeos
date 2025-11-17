@@ -20,10 +20,16 @@ TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
 BUILD_TYPE      ?= Release
 
-SRCS := kmain.c panic.c io/kprint.c io/serial.c arch/x86/multiboot.S arch/x86/start.S \
-	arch/x86/boot_gdt.S arch/x86/isr_stubs.S arch/x86/interrupts.c arch/x86/segments.c \
-	arch/x86/load_seg.S
-HEADERS := panic.h io/kprint.h io/serial.h io/port.h arch/x86/segments.h arch/x86/interrupts.h
+SRCS := acpi.c kmain.c mmap.c panic.c \
+		arch/x86/boot_gdt.S arch/x86/interrupts.c arch/x86/isr_stubs.S \
+		arch/x86/load_seg.S arch/x86/multiboot.S arch/x86/segments.c \
+		arch/x86/start.S \
+		boot/parse_mb_info.c \
+		io/kprint.c io/serial.c
+HEADERS := acpi.h mmap.c panic.h \
+		arch/x86/interrupts.h arch/x86/segments.h \
+		boot/multiboot2.h boot/parse_mb_info.h \
+		io/kprint.h io/port.h io/serial.h
 
 OBJS := $(addprefix $(this-objtree)/,$(addsuffix .o,$(SRCS)))
 LIBS := libk.a

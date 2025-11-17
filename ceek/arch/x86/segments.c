@@ -32,7 +32,7 @@ struct gdte *gdte_set_limit(struct gdte *entry, uint32_t addr)
 	return entry;
 }
 
-void init_gdt(void)
+void gdt_init(void)
 {
 	struct gdte entry;
 	memset(&entry, 0, sizeof(entry));
@@ -67,7 +67,7 @@ void init_gdt(void)
 
 	gdt_desc.location = gdt;
 	gdt_desc.size = 5 * sizeof(entry) - 1;
-	set_gdtr(&gdt_desc, 0x08, 0x10, 0x10, 0x10);
+	gdtr_set(&gdt_desc, 0x08, 0x10, 0x10, 0x10);
 }
 
 uint16_t gdt_get_interrupt_identity_data_segment(void)

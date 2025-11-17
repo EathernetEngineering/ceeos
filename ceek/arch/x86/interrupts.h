@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#ifndef CEEK_IDT_H_
-#define CEEK_IDT_H_
+#ifndef CEEK_X86_INTERRUPTS_H_
+#define CEEK_X86_INTERRUPTS_H_
 
 #include <stdint.h>
-
 
 enum int_gate_flags {
 	IDT_GATE_TYPE_INT  = 0x0E,
@@ -77,7 +76,7 @@ struct __attribute__((__packed__)) idt_descriptor {
 
 typedef void(*interrupt_stub)(void);
 
-static inline interrupt_stub idt_get_offset(const struct idte *entry)
+static inline interrupt_stub idte_get_offset(const struct idte *entry)
 {
 	uintptr_t offset = 0;
 	offset |= (uintptr_t)entry->offset_upper  << 32;
@@ -86,7 +85,7 @@ static inline interrupt_stub idt_get_offset(const struct idte *entry)
 	return (interrupt_stub)offset;
 }
 
-static inline struct idte *idt_set_offset(struct idte *entry, interrupt_stub ptr)
+static inline struct idte *idte_set_offset(struct idte *entry, interrupt_stub ptr)
 {
 	entry->offset_upper  = (uint32_t)((uintptr_t)ptr >> 32);
 	entry->offset_middle = (uint16_t)((uintptr_t)ptr >> 16);
@@ -94,12 +93,12 @@ static inline struct idte *idt_set_offset(struct idte *entry, interrupt_stub ptr
 	return entry;
 }
 
-static inline void set_idtr(struct idt_descriptor *d)
+static inline void idtr_set(struct idt_descriptor *d)
 {
 	__asm__ volatile ("lidt %0" :: "m"(*d));
 }
 
-void init_idt(void);
+void idt_init(void);
 
 void isr_handler(const struct isr_context *ctx);
 void irq_handler(const struct isr_context *ctx);

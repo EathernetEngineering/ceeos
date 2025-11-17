@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#ifndef CEEK_GDT_H_
-#define CEEK_GDT_H_
+#ifndef CEEK_X86_SEGMENTS_H_
+#define CEEK_X86_SEGMENTS_H_
 
 #include <stdint.h>
 
@@ -90,7 +90,7 @@ static inline struct gdte_long
 	return entry;
 }
 
-void init_gdt(void);
+void gdt_init(void);
 
 uint16_t gdt_get_interrupt_identiry_data_segment(void);
 uint16_t gdt_get_interrupt_identity_code_segment(void);
@@ -101,7 +101,7 @@ uint16_t gdt_get_kernel_identity_code_segment(void);
 uint16_t gdt_get_user_identity_data_segment(void);
 uint16_t gdt_get_user_identity_code_segment(void);
 
-extern void set_gdtr(struct gdt_descriptor *d, uint16_t cs, uint16_t ss,
+extern void gdtr_set(struct gdt_descriptor *d, uint16_t cs, uint16_t ss,
 					 uint16_t ds, uint16_t es);
 
 #endif

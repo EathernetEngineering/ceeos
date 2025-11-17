@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Chloe Eather
 
 .section .text
-.global set_gdtr
-.type set_gdtr,@function
-set_gdtr:
+.global gdtr_set
+.type gdtr_set,@function
+gdtr_set:
 	push %rbp
 	movq %rsp, %rbp
 	lgdt (%rdi)
@@ -21,10 +21,5 @@ set_gdtr:
 1:
 	pop %rbp
 	ret
-.size set_gdtr,.-set_gdtr
-
-.section .bss
-gdt_far_jump_selector:
-.quad 0
-.short 0
+.size gdtr_set,.-gdtr_set
 
