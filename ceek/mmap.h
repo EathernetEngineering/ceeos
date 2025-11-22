@@ -5,22 +5,33 @@
 #define CEEK_MMAP_H_
 
 #include <boot/multiboot2.h>
+#include <boot/efi.h>
 #include <stdint.h>
 
-enum memory_section_type {
-	PMEM_TYPE_RESERVED = 0
+#define PMMAP_MAX_ENTRIES 128
+
+enum pmmap_entry_type {
+	PMMAP_TYPE_BAD = 0,
+	PMMAP_TYPE_USABLE = 1,
+	PMMAP_TYPE_RESERVED = 2,
+	PMMAP_TYPE_ACPI_RECLAIMABLE = 3,
+	PMMAP_TYPE_ACPI_NVS = 4,
+	PMMAP_TYPE_EFI_RUNTIME_CODE = 5,
+	PMMAP_TYPE_EFI_RUNTIME_DATA = 6,
+	PMMAP_TYPE_MMIO = 7,
+	PMMAP_TYPE_UNACCEPTED = 8
 };
 
-struct memory_section {
-	struct memory_section *prev, *next;
-	uintptr_t base_address;
+struct pmmap_entry {
+	uintptr_t base_paddress;
+	uintptr_t base_vaddress;
 	size_t length;
-	enum memory_section_type type;
+	enum pmmap_entry_type type;
 };
 
-struct pmem_map {
+struct pmmap {
 	size_t length;
-	struct memory_section *begin;
+	struct pmmap_entry entries[PMMAP_MAX_ENTRIES];
 };
 
 void mmap_set_efi_mmap(struct multiboot_tag_efi_mmap *mmap);
@@ -28,6 +39,13 @@ void mmap_set_mb_basic_minfo(struct multiboot_tag_basic_meminfo *minfo);
 void mmap_set_mb_mmap(struct multiboot_tag_mmap *mmap);
 
 int mmap_parse(void);
+
+const struct pmmap *mmap_get(void);
+
+int mmap_swap_entries(int lhs, int rhs);
+int mmap_remove_entry(int i);
+int mmap_insert_entry(int i, const struct pmmap_entry *e);
+int mmap_append_entry(const struct pmmap_entry *e);
 
 #endif
 

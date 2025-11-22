@@ -3,8 +3,8 @@
 
 #include <acpi.h>
 
-static struct acpi_rsdp *rdspv1;
-static struct acpi_rsdp *rdspv2;
+static struct acpi_rsdp *g_rdspv1;
+static struct acpi_rsdp *g_rdspv2;
 
 int acpi_init(void)
 {
@@ -14,11 +14,11 @@ int acpi_init(void)
 
 void acpi_set_rsdpv1(uintptr_t addr)
 {
-	rdspv1 = (struct acpi_rsdp *)addr;
+	g_rdspv1 = (struct acpi_rsdp *)addr;
 }
 
 void acpi_set_rsdpv2(uintptr_t addr)
 {
-	rdspv2 = (struct acpi_rsdp *)addr;
+	g_rdspv2 = (struct acpi_rsdp *)addr;
 }
 

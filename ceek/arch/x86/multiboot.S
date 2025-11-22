@@ -21,26 +21,26 @@ address_tag_start:
 	.short MULTIBOOT_HEADER_TAG_ADDRESS
 	.short MULTIBOOT_HEADER_TAG_OPTIONAL
 	.long address_tag_end - address_tag_start
-	.long multiboot_header_start // header_addr
-	.long _text_start            // load_addr
-	.long _edata                 // load_end__addr
-	.long _end                   // bss_end_addr
+	.long multiboot_header_start    // header_addr
+	.long _text_start               // load_addr
+	.long _edata                    // load_end__addr
+	.long _end                      // bss_end_addr
 address_tag_end:
 .align 8 // The header needs to be padded to align to an 8-byte boundry
 entry_address_tag_start:
 	.short MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
 	.short MULTIBOOT_HEADER_TAG_OPTIONAL
 	.long entry_address_tag_end - entry_address_tag_start
-	.long multiboot_entry        // entry_addr
+	.long multiboot_entry           // entry_addr
 entry_address_tag_end:
 .align 8 // The header needs to be padded to align to an 8-byte boundry
 framebuffer_tag_start:
 	.short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
 	.short MULTIBOOT_HEADER_TAG_OPTIONAL
 	.long framebuffer_tag_end - framebuffer_tag_start
-	.long 1024                   // widtth
-	.long 768                    // height
-	.long 32                     // depth
+	.long 1024                      // widtth
+	.long 768                       // height
+	.long 32                        // depth
 framebuffer_tag_end:
 .align 8 // The header needs to be padded to align to an 8-byte boundry
 	.short MULTIBOOT_HEADER_TAG_END

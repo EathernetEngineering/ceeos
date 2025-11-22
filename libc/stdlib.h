@@ -7,5 +7,10 @@
 #include <itoa.h>
 #include <atoi.h>
 
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
+#define NULL (0ull)
+
 #endif
 

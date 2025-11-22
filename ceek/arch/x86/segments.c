@@ -16,8 +16,8 @@
  * 0x20: user identity data segment
  * 0x30: kernel tss
  */
-static struct gdt_descriptor gdt_desc;
-static struct gdte gdt[64];
+static struct gdt_descriptor g_gdt_desc;
+static struct gdte g_gdt[64];
 
 struct gdte *gdte_set_limit(struct gdte *entry, uint32_t addr)
 {
@@ -36,7 +36,7 @@ void gdt_init(void)
 {
 	struct gdte entry;
 	memset(&entry, 0, sizeof(entry));
-	memset(gdt, 0, sizeof(gdt)/sizeof(gdt[0]));
+	memset(g_gdt, 0, sizeof(g_gdt)/sizeof(g_gdt[0]));
 
 	/*
 	 *  The first segment must be null, then 4 segments will be identity
@@ -49,25 +49,25 @@ void gdt_init(void)
 	entry.flags_limit_upper |= SEGMENT_FLAG_G | SEGMENT_FLAG_L;
 	entry.access = SEGMENT_ACCESS_RW | SEGMENT_ACCESS_E | SEGMENT_ACCESS_S |
 		SEGMENT_ACCESS_P;
-	memcpy(&gdt[1], &entry, sizeof(entry));
+	memcpy(&g_gdt[1], &entry, sizeof(entry));
 
 	entry.flags_limit_upper |= SEGMENT_FLAG_G;
 	entry.access = SEGMENT_ACCESS_RW | SEGMENT_ACCESS_S | SEGMENT_ACCESS_P;
-	memcpy(&gdt[2], &entry, sizeof(entry));
+	memcpy(&g_gdt[2], &entry, sizeof(entry));
 
 	entry.flags_limit_upper |= SEGMENT_FLAG_G | SEGMENT_FLAG_L;
 	entry.access = SEGMENT_ACCESS_RW | SEGMENT_ACCESS_E | SEGMENT_ACCESS_S |
 		SEGMENT_ACCESS_P | SEGMENT_ACCESS_DPL_3;
-	memcpy(&gdt[3], &entry, sizeof(entry));
+	memcpy(&g_gdt[3], &entry, sizeof(entry));
 
 	entry.flags_limit_upper |= SEGMENT_FLAG_G;
 	entry.access = SEGMENT_ACCESS_RW | SEGMENT_ACCESS_P | SEGMENT_ACCESS_S |
 		SEGMENT_ACCESS_DPL_3;
-	memcpy(&gdt[4], &entry, sizeof(entry));
+	memcpy(&g_gdt[4], &entry, sizeof(entry));
 
-	gdt_desc.location = gdt;
-	gdt_desc.size = 5 * sizeof(entry) - 1;
-	gdtr_set(&gdt_desc, 0x08, 0x10, 0x10, 0x10);
+	g_gdt_desc.location = g_gdt;
+	g_gdt_desc.size = 5 * sizeof(entry) - 1;
+	gdtr_set(&g_gdt_desc, 0x08, 0x10, 0x10, 0x10);
 }
 
 uint16_t gdt_get_interrupt_identity_data_segment(void)

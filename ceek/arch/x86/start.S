@@ -19,12 +19,11 @@ _start:
 .type multiboot_entry,@function
 multiboot_entry:
 	.cfi_startproc
+	.cfi_undefined rip
 	// Set up stack
 	movl $stack_top, %esp
-	.cfi_adjust_cfa_offset
 	movl %esp, %ebp
-	.cfi_def_cfa_register rbp
-	.cfi_undefined rip
+	.cfi_def_cfa_register %rbp
 	// Clear %eflags
 	pushl $0
 	popf
@@ -112,23 +111,30 @@ multiboot_entry:
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
-	ljmp $LONG_MODE_TRANSITION_GDT_CODE64_INDEX, $4f
+	ljmp $LONG_MODE_TRANSITION_GDT_CODE64_INDEX, $multiboot_long_mode_enable
+.cfi_endproc
+.size multiboot_entry,.-multiboot_entry
 
 
 .align 8
 .code64
-4:
+.global multiboot_long_mode_enable
+.type multiboot_long_mode_enable,@function
+multiboot_long_mode_enable:
+.cfi_startproc
+.cfi_undefined rip
+.cfi_def_cfa_register %rbp
 	movl (mb_magic), %eax
 	movl %eax, %edi
 	movl (mb_info_addr), %eax
 	movl %eax, %esi
 	call kernel_main
-5:
+.cfi_endproc
 	cli
+1:
 	hlt
-	jmp 5b
-	.cfi_endproc
-.size multiboot_entry,.-multiboot_entry
+	jmp 1b
+.size multiboot_long_mode_enable,.-multiboot_long_mode_enable
 
 .section .bss
 .align 16

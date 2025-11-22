@@ -25,6 +25,14 @@ void kernel_main(unsigned int magic, uintptr_t multiboot_info) {
 	kprint("Set up exception handlers: OK\r\n");
 	gdt_init();
 
+	/*
+	 * Set these to NULL so when parsing whether or not the info was provided
+	 * by the bootloader is known if .bss was not zero initialized
+	 */
+	mmap_set_mb_basic_minfo((void *)0);
+	mmap_set_mb_mmap((void *)0);
+	mmap_set_efi_mmap((void *)0);
+
 	kprint("Parsing multiboot info...\r\n");
 	if ((ec = parse_boot_info(multiboot_info))) {
 		kprint("!!! Failed to parse multiboot information struct!");

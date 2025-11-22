@@ -28,7 +28,7 @@ SRCS := acpi.c kmain.c mmap.c panic.c \
 		io/kprint.c io/serial.c
 HEADERS := acpi.h mmap.c panic.h \
 		arch/x86/interrupts.h arch/x86/segments.h \
-		boot/multiboot2.h boot/parse_mb_info.h \
+		boot/multiboot2.h boot/parse_mb_info.h boot/efi.h \
 		io/kprint.h io/port.h io/serial.h
 
 OBJS := $(addprefix $(this-objtree)/,$(addsuffix .o,$(SRCS)))

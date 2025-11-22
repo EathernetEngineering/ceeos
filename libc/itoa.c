@@ -21,6 +21,10 @@ int ltoa(long n, char *buffer, int radix)
 		}
 		n *= -1;
 	}
+	if (n == 0) {
+		buffer[0] = '0';
+		return 1;
+	}
 
 	int64_t length = ((63 - __builtin_clzll((int64_t)n)) /
 		(63 - __builtin_clzll((int64_t)radix)));

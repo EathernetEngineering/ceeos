@@ -23,9 +23,8 @@ isr\vec:
 .global isr\vec
 .type isr\vec,@function
 isr\vec:
-	subq $16, %rsp
-	movq $0, 8(%rsp)
-	movq $\vec, (%rsp)
+	pushq $0
+	pushq $\vec
 	jmp isr_common_stub
 .size isr\vec, .-isr\vec
 .endm
@@ -34,85 +33,228 @@ isr\vec:
 .global irq\vec
 .type irq\vec,@function
 irq\vec:
-	subq $16, %rsp
-	movq $\ec, 8(%rsp)
-	movq $\vec, (%rsp)
+	pushq $\ec
+	pushq $\vec
 	jmp irq_common_stub
 .size irq\vec, .-irq\vec
 .endm
 
 .section .text
+.type isr_common_stub,@function
 isr_common_stub:
-	pushq %rax
-	pushq %rbx
-	pushq %rcx
-	pushq %rdx
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %r8
-	pushq %r9
-	pushq %r10
-	pushq %r11
-	pushq %r12
-	pushq %r13
-	pushq %r14
-	pushq %r15
-	movq %rsp, %rdi
-	call isr_handler
-	popq %r15
-	popq %r14
-	popq %r13
-	popq %r12
-	popq %r11
-	popq %r10
-	popq %r9
-	popq %r8
-	popq %rsi
-	popq %rdi
-	popq %rbp
-	popq %rdx
-	popq %rcx
-	popq %rbx
-	popq %rax
-	addq $16, %rsp
-	iretq
+.cfi_startproc
+.cfi_signal_frame
+.cfi_def_cfa %rsp,0x28
+.cfi_return_column %rip
+.cfi_offset %rip,-0x18
 
-irq_common_stub:
-	pushq %rax
-	pushq %rbx
-	pushq %rcx
-	pushq %rdx
 	pushq %rbp
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rbp,-0x30
+	pushq %rax
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rax,-0x38
+	pushq %rbx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rbx,-0x40
+	pushq %rcx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rcx,-0x48
+	pushq %rdx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rdx,-0x50
 	pushq %rdi
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rdi,-0x58
 	pushq %rsi
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rsi,-0x60
 	pushq %r8
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r8,-0x68
 	pushq %r9
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r9,-0x70
 	pushq %r10
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r10,-0x78
 	pushq %r11
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r11,-0x80
 	pushq %r12
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r12,-0x88
 	pushq %r13
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r13,-0x90
 	pushq %r14
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r14,-0x98
 	pushq %r15
-	movq %rsp, %rdi
-	call irq_handler
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r15,-0xA0
+
+	leaq 0xA0(%rsp), %rdi
+	call isr_handler
+
 	popq %r15
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r15
 	popq %r14
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r14
 	popq %r13
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r13
 	popq %r12
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r12
 	popq %r11
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r11
 	popq %r10
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r10
 	popq %r9
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r9
 	popq %r8
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r8
 	popq %rsi
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rsi
 	popq %rdi
-	popq %rbp
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rdi
 	popq %rdx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rdx
 	popq %rcx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rcx
 	popq %rbx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rbx
 	popq %rax
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rax
+	popq %rbp
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rbp
+.cfi_def_cfa %rsp,40
 	addq $16, %rsp
 	iretq
+.cfi_endproc
+.size isr_common_stub,.-isr_common_stub
+
+.type irq_common_stub,@function
+irq_common_stub:
+.cfi_startproc
+.cfi_signal_frame
+.cfi_def_cfa %rsp,0x28
+.cfi_return_column %rip
+.cfi_offset %rip,-0x18
+
+	pushq %rbp
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rbp,-0x30
+	pushq %rax
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rax,-0x38
+	pushq %rbx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rbx,-0x40
+	pushq %rcx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rcx,-0x48
+	pushq %rdx
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rdx,-0x50
+	pushq %rdi
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rdi,-0x58
+	pushq %rsi
+.cfi_adjust_cfa_offset 8
+.cfi_offset %rsi,-0x60
+	pushq %r8
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r8,-0x68
+	pushq %r9
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r9,-0x70
+	pushq %r10
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r10,-0x78
+	pushq %r11
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r11,-0x80
+	pushq %r12
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r12,-0x88
+	pushq %r13
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r13,-0x90
+	pushq %r14
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r14,-0x98
+	pushq %r15
+.cfi_adjust_cfa_offset 8
+.cfi_offset %r15,-0xA0
+
+	leaq 0xA0(%rsp), %rdi
+	call irq_handler
+
+	popq %r15
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r15
+	popq %r14
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r14
+	popq %r13
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r13
+	popq %r12
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r12
+	popq %r11
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r11
+	popq %r10
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r10
+	popq %r9
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r9
+	popq %r8
+.cfi_adjust_cfa_offset -8
+.cfi_restore %r8
+	popq %rsi
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rsi
+	popq %rdi
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rdi
+	popq %rdx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rdx
+	popq %rcx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rcx
+	popq %rbx
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rbx
+	popq %rax
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rax
+	popq %rbp
+.cfi_adjust_cfa_offset -8
+.cfi_restore %rbp
+.cfi_def_cfa %rsp,40
+	addq $16, %rsp
+	iretq
+.cfi_endproc
+.size irq_common_stub,.-irq_common_stub
 
 ISR_STUB     0        // #DE
 ISR_STUB     1        // #DB

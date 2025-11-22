@@ -17,7 +17,7 @@ char *strcpy(char *restrict dst, const char *restrict src)
 	unsigned long i = 0;
 	do {
 		dst[i] = src[i];
-	} while (src[i] != '\0');
+	} while (src[i++] != '\0');
 	return dst;
 }
 
@@ -46,8 +46,14 @@ void *memmove(void *dst, const void *src, unsigned long len)
 {
 	if (dst == src)
 		return dst;
-	for (unsigned long i = 0; i < len; i++) {
-		*((char *)dst + i) = *((char *)src + i);
+	if (dst < src) {
+		for (unsigned long i = 0; i < len; i++) {
+			*((unsigned char *)dst + i) = *((unsigned char *)src + i);
+		}
+	} else {
+		for (unsigned long i =  len - 1; i > 0; i--) {
+			*((unsigned char *)dst + i) = *((unsigned char *)src + i);
+		}
 	}
 	return dst;
 }

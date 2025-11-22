@@ -33,7 +33,6 @@ int parse_boot_info(uintptr_t addr)
 				break;
 
 			case MULTIBOOT_TAG_TYPE_MODULE:
-				kprint("Module: ");
 				kprint(((struct multiboot_tag_module *)tag)->cmdline);
 				kprint("\r\n");
 				// TODO: Handle modules
@@ -44,7 +43,6 @@ int parse_boot_info(uintptr_t addr)
 				break;
 
 			case MULTIBOOT_TAG_TYPE_BOOTDEV:
-				kprint("Boot device\r\n");
 				// TODO: Handle boot drive
 				break;
 
@@ -53,21 +51,20 @@ int parse_boot_info(uintptr_t addr)
 				break;
 
 			case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-				kprint("Framebuffer\r\n");
 				// TODO: Start using the framebuffer!!
 				break;
 
 			case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
 				uintptr_t addr;
 				// TODO: Do the checksum and extract the read address from this copy
-				addr = (uintptr_t)&((struct multiboot_tag_old_acpi *)tag)->rsdp[0];
+				addr = (uintptr_t)((struct multiboot_tag_old_acpi *)tag)->rsdp;
 				acpi_set_rsdpv1(addr);
 			} break;
 
 			case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
 				uintptr_t addr;
 				// TODO: Do the checksum and extract the read address from this copy
-				addr = (uintptr_t)&((struct multiboot_tag_new_acpi *)tag)->rsdp[0];
+				addr = (uintptr_t)((struct multiboot_tag_new_acpi *)tag)->rsdp;
 				acpi_set_rsdpv2(addr);
 			} break;
 

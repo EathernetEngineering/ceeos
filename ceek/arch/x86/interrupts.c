@@ -7,128 +7,129 @@
 #include <panic.h>
 #include <io/kprint.h>
 
+#include <itoa.h>
 #include <string.h>
 
-static struct idt_descriptor idt_desc;
-static struct idte idt[UINT8_MAX];
+static struct idt_descriptor g_idt_desc;
+static struct idte g_idt[UINT8_MAX];
 
 void idt_init(void)
 {
 	struct idte entry;
 	memset(&entry, 0, sizeof(entry));
-	memset(idt, 0, sizeof(idt)/sizeof(idt[0]));
+	memset(g_idt, 0, sizeof(g_idt)/sizeof(g_idt[0]));
 	idte_set_offset(&entry, isr0);
 	entry.segment_selector = gdt_get_interrupt_identity_code_segment();
 	entry.flags = IDT_GATE_TYPE_TRAP | IDT_GATE_P;
-	memcpy(&idt[ 0], &entry, sizeof(entry));
+	memcpy(&g_idt[ 0], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr1);
-	memcpy(&idt[ 1], &entry, sizeof(entry));
+	memcpy(&g_idt[ 1], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr2);
-	memcpy(&idt[ 2], &entry, sizeof(entry));
+	memcpy(&g_idt[ 2], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr3);
-	memcpy(&idt[ 3], &entry, sizeof(entry));
+	memcpy(&g_idt[ 3], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr4);
-	memcpy(&idt[ 4], &entry, sizeof(entry));
+	memcpy(&g_idt[ 4], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr5);
-	memcpy(&idt[ 5], &entry, sizeof(entry));
+	memcpy(&g_idt[ 5], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr6);
-	memcpy(&idt[ 6], &entry, sizeof(entry));
+	memcpy(&g_idt[ 6], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr7);
-	memcpy(&idt[ 7], &entry, sizeof(entry));
+	memcpy(&g_idt[ 7], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr8);
-	memcpy(&idt[ 8], &entry, sizeof(entry));
+	memcpy(&g_idt[ 8], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr9);
-	memcpy(&idt[ 9], &entry, sizeof(entry));
+	memcpy(&g_idt[ 9], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr10);
-	memcpy(&idt[10], &entry, sizeof(entry));
+	memcpy(&g_idt[10], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr11);
-	memcpy(&idt[11], &entry, sizeof(entry));
+	memcpy(&g_idt[11], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr12);
-	memcpy(&idt[12], &entry, sizeof(entry));
+	memcpy(&g_idt[12], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr13);
-	memcpy(&idt[13], &entry, sizeof(entry));
+	memcpy(&g_idt[13], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr14);
-	memcpy(&idt[14], &entry, sizeof(entry));
+	memcpy(&g_idt[14], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr15);
-	memcpy(&idt[15], &entry, sizeof(entry));
+	memcpy(&g_idt[15], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr16);
-	memcpy(&idt[16], &entry, sizeof(entry));
+	memcpy(&g_idt[16], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr17);
-	memcpy(&idt[17], &entry, sizeof(entry));
+	memcpy(&g_idt[17], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr18);
-	memcpy(&idt[18], &entry, sizeof(entry));
+	memcpy(&g_idt[18], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr19);
-	memcpy(&idt[19], &entry, sizeof(entry));
+	memcpy(&g_idt[19], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr20);
-	memcpy(&idt[20], &entry, sizeof(entry));
+	memcpy(&g_idt[20], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr21);
-	memcpy(&idt[21], &entry, sizeof(entry));
+	memcpy(&g_idt[21], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr22);
-	memcpy(&idt[22], &entry, sizeof(entry));
+	memcpy(&g_idt[22], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr23);
-	memcpy(&idt[23], &entry, sizeof(entry));
+	memcpy(&g_idt[23], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr24);
-	memcpy(&idt[24], &entry, sizeof(entry));
+	memcpy(&g_idt[24], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr25);
-	memcpy(&idt[25], &entry, sizeof(entry));
+	memcpy(&g_idt[25], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr26);
-	memcpy(&idt[26], &entry, sizeof(entry));
+	memcpy(&g_idt[26], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr27);
-	memcpy(&idt[27], &entry, sizeof(entry));
+	memcpy(&g_idt[27], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr28);
-	memcpy(&idt[28], &entry, sizeof(entry));
+	memcpy(&g_idt[28], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr29);
-	memcpy(&idt[29], &entry, sizeof(entry));
+	memcpy(&g_idt[29], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr30);
-	memcpy(&idt[30], &entry, sizeof(entry));
+	memcpy(&g_idt[30], &entry, sizeof(entry));
 	idte_set_offset(&entry, isr31);
-	memcpy(&idt[31], &entry, sizeof(entry));
+	memcpy(&g_idt[31], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq32);
 	entry.flags = IDT_GATE_TYPE_INT | IDT_GATE_P; // Interrupt
-	memcpy(&idt[32], &entry, sizeof(entry));
+	memcpy(&g_idt[32], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq33);
-	memcpy(&idt[33], &entry, sizeof(entry));
+	memcpy(&g_idt[33], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq34);
-	memcpy(&idt[34], &entry, sizeof(entry));
+	memcpy(&g_idt[34], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq35);
-	memcpy(&idt[35], &entry, sizeof(entry));
+	memcpy(&g_idt[35], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq36);
-	memcpy(&idt[36], &entry, sizeof(entry));
+	memcpy(&g_idt[36], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq37);
-	memcpy(&idt[37], &entry, sizeof(entry));
+	memcpy(&g_idt[37], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq38);
-	memcpy(&idt[38], &entry, sizeof(entry));
+	memcpy(&g_idt[38], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq39);
-	memcpy(&idt[39], &entry, sizeof(entry));
+	memcpy(&g_idt[39], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq40);
-	memcpy(&idt[40], &entry, sizeof(entry));
+	memcpy(&g_idt[40], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq41);
-	memcpy(&idt[41], &entry, sizeof(entry));
+	memcpy(&g_idt[41], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq42);
-	memcpy(&idt[42], &entry, sizeof(entry));
+	memcpy(&g_idt[42], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq43);
-	memcpy(&idt[43], &entry, sizeof(entry));
+	memcpy(&g_idt[43], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq44);
-	memcpy(&idt[44], &entry, sizeof(entry));
+	memcpy(&g_idt[44], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq45);
-	memcpy(&idt[45], &entry, sizeof(entry));
+	memcpy(&g_idt[45], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq46);
-	memcpy(&idt[46], &entry, sizeof(entry));
+	memcpy(&g_idt[46], &entry, sizeof(entry));
 	idte_set_offset(&entry, irq47);
-	memcpy(&idt[47], &entry, sizeof(entry));
+	memcpy(&g_idt[47], &entry, sizeof(entry));
 
 	idte_set_offset(&entry, isr255);
 	for (int32_t i = 48; i < UINT8_MAX; i++) {
-		memcpy(&idt[i], &entry, sizeof(entry));
+		memcpy(&g_idt[i], &entry, sizeof(entry));
 	}
 
 	uint8_t mask = 0;
 	inb(&mask, 0x21);
 	outb(0x21, mask | 0x01);  // disable IRQ0
 
-	idt_desc.size = 48 * sizeof(entry) - 1;
-	idt_desc.location = idt;
-	idtr_set(&idt_desc);
+	g_idt_desc.size = 48 * sizeof(entry) - 1;
+	g_idt_desc.location = g_idt;
+	idtr_set(&g_idt_desc);
 }
 
 void isr_handler(const struct isr_context *ctx)
@@ -143,7 +144,7 @@ void isr_handler(const struct isr_context *ctx)
 			break;
 
 		case EXCEPTION_BP:
-			kprint("Divide by zero fault caught.\r\n");
+			kprint("Breakpoint caught.\r\n");
 			break;
 
 		case EXCEPTION_OF:
@@ -226,12 +227,16 @@ void isr_handler(const struct isr_context *ctx)
 
 		default:
 			kprint("Unknown isr called");
+			panic();
 	}
 }
 
 void irq_handler(const struct isr_context *ctx)
 {
-	kprint("Caught IRQ");
-	(void)ctx;
+	char str[64];
+	int strl = itoa(ctx->error_code, str, 10);
+	strcpy(str + strl, "\r\n");
+	kprint("Caught IRQ ");
+	kprint(str);
 }
 
