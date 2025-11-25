@@ -4,6 +4,11 @@
 #define __ASSEMBLY__
 #include <boot/multiboot2.h>
 
+.extern _boot_text_start_phys
+.extern _edata_phys
+.extern _end_phys
+.extern multiboot_entry
+
 .set FLAGS, 0
 .set MAGIC, MULTIBOOT2_HEADER_MAGIC
 .set SIZE, multiboot_header_end - multiboot_header_start
@@ -17,16 +22,6 @@ multiboot_header_start:
 	.long FLAGS
 	.long SIZE
 	.long CHECKSUM
-address_tag_start:
-	.short MULTIBOOT_HEADER_TAG_ADDRESS
-	.short MULTIBOOT_HEADER_TAG_OPTIONAL
-	.long address_tag_end - address_tag_start
-	.long multiboot_header_start    // header_addr
-	.long _text_start               // load_addr
-	.long _edata                    // load_end__addr
-	.long _end                      // bss_end_addr
-address_tag_end:
-.align 8 // The header needs to be padded to align to an 8-byte boundry
 entry_address_tag_start:
 	.short MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
 	.short MULTIBOOT_HEADER_TAG_OPTIONAL

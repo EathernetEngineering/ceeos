@@ -12,7 +12,7 @@
 .global LONG_MODE_TRANSITION_GDT_DATA64_INDEX
 .set LONG_MODE_TRANSITION_GDT_DATA64_INDEX, 0x20
 
-.section .rodata
+.section .boot.rodata,"a"
 .global long_mode_transition_gdt_descriptor
 long_mode_transition_gdt_descriptor:
 	.short long_mode_transition_gdt_end - long_mode_transition_gdt_start - 1

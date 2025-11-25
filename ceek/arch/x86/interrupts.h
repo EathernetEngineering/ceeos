@@ -69,10 +69,10 @@ struct idte {
 	uint32_t reserved;
 };
 
-struct __attribute__((__packed__)) idt_descriptor {
+struct idt_descriptor {
 	uint16_t size;
 	struct idte *location;
-};
+} __attribute__((packed));
 
 typedef void(*interrupt_stub)(void);
 

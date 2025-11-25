@@ -143,14 +143,16 @@ BASH            := bash
 DEPFLAGS := -MMD -MD -MP
 WARNINGFLAGS := -Wall -Wextra -Werror -Wpedantic -Wswitch-enum
 CFLAGS := -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -fno-builtin \
-		  -fno-exceptions -fno-asynchronous-unwind-tables -std=c11 \
+		  -std=c11 -fno-strict-aliasing -fno-pic -mcmodel=kernel\
 		  $(DEPFLAGS) $(WARNINGFLAGS)
 LDFLAGS := -nostdlib -nostartfiles
 
 ifeq ("$(BUILD_TYPE)","Release")
 CFLAGS += -O2
+LDFLAGS += -O2
 else ifeq ("$(BUILD_TYPE)","Debug")
 CFLAGS += -ggdb -Og -fno-omit-frame-pointer
+LDFLAGS += -g -Og
 endif
 
 export HOSTCC HOSTCXX HOSTPKG_CONFIG AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-.section .text
-.code64
 .extern kernel_main
+.extern long_mode_transition_gdt_descriptor
+.extern LONG_MODE_TRANSITION_GDT_NULL_INDEX
+.extern LONG_MODE_TRANSITION_GDT_CODE32_INDEX
+.extern LONG_MODE_TRANSITION_GDT_DATA32_INDEX
+.extern LONG_MODE_TRANSITION_GDT_CODE64_INDEX
+.extern LONG_MODE_TRANSITION_GDT_DATA64_INDEX
 
+.section .boot.text,"ax"
 .code32
 .global start, _start
 .type start,@function
@@ -42,47 +47,80 @@ multiboot_entry:
 	// Load a known GDT
 	lgdt long_mode_transition_gdt_descriptor
 	mov $LONG_MODE_TRANSITION_GDT_DATA32_INDEX, %ax
-	mov %ax, %ss
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
+	movw %ax, %ss
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
 	ljmp $LONG_MODE_TRANSITION_GDT_CODE32_INDEX, $1f
 1:
-	// Zero the PML4, PDPT, and PD (8 * 512 * 3 = 0x3000 entries)
-	movl $PML4, %edi
-	xorl %ecx, %ecx
-	xorl %eax, %eax
-2:
-	movl %eax, (%edi)
-	incl %edi
-	cmpl $0x3000, %ecx
-	je 2b
+	// Zero the pml4, PDPT, and PD
+	// (8 * 512 * 5) / 4 = 0x1400 entries
+	movl $pml4,   %edi
+	movl $0x1400, %ecx
+	xorl %eax,    %eax
+	cld
+	rep stosl
 
 	// Set up the Page Map Level 4
-	movl $PDPT, %eax
-	orl $0x03, %eax // 0x03 = Present | RW
-	movl %eax, PML4
-	movl $0, PML4+4
+	movl $pdpt_low,  %eax
+	orl $0x03,   %eax              // 0x03 = Present | RW
+	movl %eax,   pml4      + 0x000 // pml4[0] low 32 bits
+	movl $0,     pml4      + 0x004 // pml4[0] high 32 bits
+
+	movl $pdpt_high,  %eax
+	orl $0x03,   %eax              // 0x03 = Present | RW
+	movl %eax,   pml4      + 0xFF8 // pml4[511] low 32 bits
+	movl $0,     pml4      + 0xFFC // pml4[511] high 32 bits
 
 	// Set up the Page Directory Pointer Table
-	movl $PD, %eax
-	orl $0x03, %eax // 0x03 = Present | RW
-	movl %eax, PDPT
-	movl $0, PDPT+4
+	movl $pd_1g, %eax
+	orl $0x03,   %eax               // 0x03 = Present | RW
+	movl %eax,   pdpt_low  + 0x000  // pdpt_low[0] low 32 bits
+	movl $0,     pdpt_low  + 0x004  // pdpt_low[0] high 32 bits
 
-	// Set up the Page Directory
-	movl $512, %ecx
-	xorl %ebx, %ebx
-3:
-	movl %ebx, %eax
-	shll $21, %eax
-	orl $0x83, %eax // 0x03 = Page Size | Present | RW
-	movl %eax, PD(,%ebx,8)
-	movl $0, PD+4(,%ebx,8)
-	incl %ebx
+	movl $pd_2g, %eax
+	orl $0x03,   %eax               // 0x03 = Present | RW
+	movl %eax,   pdpt_low  + 0x008  // pdpt_low[1] low 32 bits
+	movl $0,     pdpt_low  + 0x012  // pdpt_low[1] high 32 bits
+
+	movl $pd_1g, %eax
+	orl $0x03,   %eax               // 0x03 = Present | RW
+	movl %eax,   pdpt_high + 0xFF0  // pdpt_high[510] low 32 bits
+	movl $0,     pdpt_high + 0xFF4  // pdpt_high[510] high 32 bits
+
+	movl $pd_2g, %eax
+	orl $0x03,   %eax               // 0x03 = Present | RW
+	movl %eax,   pdpt_high + 0xFF8  // pdpt_high[511] low 32 bits
+	movl $0,     pdpt_high + 0xFFC  // pdpt_high[511] high 32 bits
+
+	// Set up the Directories
+	movl $512,   %ecx
+	xorl %eax,   %eax // physical address
+	movl $0x83,  %ebx // 0x83 = Page Size | Present | RW
+	xorl %edx,   %edx
+	movl $pd_1g, %edi
+2:
+	movl %eax, %esi
+	orl  %ebx, %esi
+	movl %esi, (%edi,%edx,8)
+	movl $0,  4(%edi,%edx,8)
+	add $0x200000, %eax // Next 2M page
+	incl %edx
 	decl %ecx
-	test %ecx, %ecx
+	jnz 2b
+
+	movl $512,   %ecx
+	xorl %edx,   %edx
+	movl $pd_2g, %edi
+3:
+	movl %eax, %esi
+	orl  %ebx, %esi
+	movl %esi, (%edi,%edx,8)
+	movl $0,  4(%edi,%edx,8)
+	add $0x200000, %eax // Next 2M page
+	incl %edx
+	decl %ecx
 	jnz 3b
 
 	// Enable Physical Address Extension
@@ -90,9 +128,9 @@ multiboot_entry:
 	orl $0x20, %eax // 1 << 5 = 0x20 = PAE bit
 	movl %eax, %cr4
 
-	// Set the PML4 address
-	movl $PML4, %eax
-	movl %eax, %cr3
+	// Set the pml4 address
+	movl $pml4, %eax
+	movl %eax,  %cr3
 
 	// Set Long Mode Enable
 	movl $0xC0000080, %ecx
@@ -106,15 +144,14 @@ multiboot_entry:
 	movl %eax, %cr0
 
 	mov $LONG_MODE_TRANSITION_GDT_DATA64_INDEX, %ax
-	mov %ax, %ss
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
+	movw %ax, %ss
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
 	ljmp $LONG_MODE_TRANSITION_GDT_CODE64_INDEX, $multiboot_long_mode_enable
 .cfi_endproc
 .size multiboot_entry,.-multiboot_entry
-
 
 .align 8
 .code64
@@ -136,26 +173,39 @@ multiboot_long_mode_enable:
 	jmp 1b
 .size multiboot_long_mode_enable,.-multiboot_long_mode_enable
 
-.section .bss
+.section .boot.bss,"aw",@nobits
 .align 16
 .global stack_bottom
 stack_bottom:
-	.skip 16384
+	.skip 0x4000
 .global stack_top
 stack_top:
+
 .global mb_magic
 mb_magic:
-	.long 0
+	.skip 4
 .global mb_info_addr
 mb_info_addr:
-	.long 0
-.align 4096
-.global PML4
-PML4:
-.space 4096, 0
-.global PDPT
-PDPT:
-.skip 4096, 0
-.global PD
-PD: .space 4096, 0
+	.skip 4
+
+.align 0x1000
+.global pml4
+pml4:
+	.skip 0x1000
+
+.global pdpt_low
+pdpt_low:
+	.skip 0x1000
+
+.global pdpt_high
+pdpt_high:
+	.skip 0x1000
+
+.global pd_1g
+pd_1g:
+	.skip 0x1000
+
+.global pd_2g
+pd_2g:
+	.skip 0x1000
 

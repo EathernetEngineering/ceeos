@@ -94,7 +94,7 @@ isr_common_stub:
 .cfi_adjust_cfa_offset 8
 .cfi_offset %r15,-0xA0
 
-	leaq 0xA0(%rsp), %rdi
+	movq %rsp, %rdi
 	call isr_handler
 
 	popq %r15

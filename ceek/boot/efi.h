@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Chloe Eather
 
-#ifndef CEEK_BOOOT_EFI_H_
-#define CEEK_BOOOT_EFI_H_
+#ifndef CEEK_BOOT_EFI_H_
+#define CEEK_BOOT_EFI_H_
 
 #include <stdint.h>
 

@@ -46,6 +46,7 @@ int mmap_swap_entries(int lhs, int rhs);
 int mmap_remove_entry(int i);
 int mmap_insert_entry(int i, const struct pmmap_entry *e);
 int mmap_append_entry(const struct pmmap_entry *e);
+void mmap_normalize(int *diff);
 
 #endif
 

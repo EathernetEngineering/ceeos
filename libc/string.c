@@ -69,30 +69,41 @@ int strcmp(const char *lhs, const char *rhs)
 {
 	if (lhs == rhs)
 		return 0;
-	unsigned long i = 0;
-	while (lhs[i] != '\0' && lhs[i] == rhs[i])
-		i++;
-	return lhs[i] - rhs[i];
+	while ((unsigned char *)lhs == (unsigned char *)rhs && *lhs != '\0') {
+		lhs++;
+		rhs++;
+	}
+	return (unsigned char *)lhs - (unsigned char *)rhs;
 }
 
 int strncmp(const char *lhs, const char *rhs, unsigned long n)
 {
-	if (lhs == rhs)
+	if (lhs == rhs || n == 0)
 		return 0;
-	unsigned long i = 0;
-	while (lhs[i] != '\0' && lhs[i] == rhs[i] && i < n)
-		i++;
-	return lhs[i] - rhs[i];
+
+	while (n-- > 0) {
+		if (*(unsigned char *)lhs != *(unsigned char *)rhs)
+			return *(unsigned char *)lhs - *(unsigned char *)rhs;
+		if (*lhs == '\0')
+			return 0;
+		lhs++;
+		rhs++;
+	}
+	return 0;
 }
 
 int memcmp(const void *lhs, const void *rhs, unsigned long n)
 {
+	const char *c1 = (const char *)lhs, *c2 = (const char *)rhs;
 	if (lhs == rhs)
 		return 0;
-	unsigned long i = 0;
-	while (*((char *)lhs + i) == *((char *)rhs + i) && i < n)
-		i++;
-	return *((char *)lhs + i) - *((char *)rhs + i);
+	for (unsigned long i = 0; i < n; i++) {
+		if (c1[i] < c2[i])
+			return -1;
+		else if (c1[i] > c2[i])
+			return 1;
+	}
+	return 0;
 }
 
 char *strcat(char *restrict dst, const char *restrict src)

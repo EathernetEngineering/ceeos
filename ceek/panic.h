@@ -4,8 +4,11 @@
 #ifndef CEEK_PANIC_H_
 #define CEEK_PANIC_H_
 
-__attribute__((noreturn))
-void panic(void);
+#include <arch/x86/interrupts.h>
+
+void __attribute__((__noreturn__))
+	interrupt_panic(const struct isr_context *ctx);
+void __attribute__((__noreturn__)) panic(void);
 
 static inline void __attribute__((__noreturn__)) fatal_spin(void)
 {

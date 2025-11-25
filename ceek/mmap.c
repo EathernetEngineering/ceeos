@@ -18,6 +18,122 @@ static struct multiboot_tag_mmap *g_mb_mmap;
 
 static struct pmmap g_mmap;
 
+static void mmap_sort_addr(void);
+static void mmap_merge_entries(void);
+static int mmap_parse_mb_mmap(void);
+static int mmap_parse_efi_mmap(void);
+static int mmap_parse_mb_minfo(void);
+
+void mmap_set_efi_mmap(struct multiboot_tag_efi_mmap *mmap)
+{
+	g_mb_efi_mmap = mmap;
+}
+
+void mmap_set_mb_basic_minfo(struct multiboot_tag_basic_meminfo *minfo)
+{
+	g_mb_basic_minfo = minfo;
+}
+
+void mmap_set_mb_mmap(struct multiboot_tag_mmap *mmap)
+{
+	g_mb_mmap = mmap;
+}
+
+int mmap_parse(void)
+{
+	int ec = 0, ret = 0;
+
+	g_mmap.length = 0;
+
+	ec = mmap_parse_mb_mmap();
+	if (ec) {
+		kprint("Failed to parse multiboot memory map\r\n");
+		ret = -1;
+	}
+	ec = mmap_parse_efi_mmap();
+	if (ec) {
+		kprint("Failed to parse EFI memory map\r\n");
+		ret = ret ? ret : 1;
+	}
+	if (g_mmap.length == 0) {
+		ec = mmap_parse_mb_minfo();
+		if (ec) {
+			kprint("Failed to parse multiboot basic meminfo\r\n");
+			panic();
+		}
+	}
+	mmap_normalize(NULL);
+	if (g_mmap.length == 0)
+		ret = -1;
+
+	return ret;
+}
+
+const struct pmmap *mmap_get(void)
+{
+	return &g_mmap;
+}
+
+int mmap_swap_entries(int lhs, int rhs)
+{
+	struct pmmap_entry tmp;
+	if ((size_t)lhs >= g_mmap.length || (size_t)rhs >= g_mmap.length)
+		return -1;
+
+	memcpy(&tmp, &g_mmap.entries[lhs], sizeof(struct pmmap_entry));
+	memcpy(&g_mmap.entries[lhs], &g_mmap.entries[rhs],
+		sizeof(struct pmmap_entry));
+	memcpy(&g_mmap.entries[rhs], &tmp, sizeof(struct pmmap_entry));
+
+	return 0;
+}
+
+int mmap_remove_entry(int i)
+{
+	if ((size_t)i >= g_mmap.length)
+		return -1;
+
+	if (i != (int)g_mmap.length - 1) {
+		size_t remaining = g_mmap.length - (i + 1);
+		memmove(&g_mmap.entries[i], &g_mmap.entries[i + 1],
+			 remaining * sizeof(struct pmmap_entry));
+	}
+	g_mmap.length--;
+	memset(&g_mmap.entries[g_mmap.length], 0, sizeof(struct pmmap_entry));
+
+	return 0;
+}
+
+int mmap_insert_entry(int i, const struct pmmap_entry *e)
+{
+	if (g_mmap.length >= PMMAP_MAX_ENTRIES || i > (int)g_mmap.length)
+		return -1;
+
+	if (i != (int)g_mmap.length) {
+		int remaining = (int)g_mmap.length - (i + 1);
+		memmove(&g_mmap.entries[i + 1], &g_mmap.entries[i],
+			remaining * sizeof(struct pmmap_entry));
+	}
+	memcpy(&g_mmap.entries[i], e, sizeof(struct pmmap_entry));
+	g_mmap.length++;
+
+	return 0;
+}
+
+int mmap_append_entry(const struct pmmap_entry *e)
+{
+	return mmap_insert_entry(g_mmap.length, e);
+}
+
+void mmap_normalize(int *diff)
+{
+	int inital_count = g_mmap.length;
+	mmap_sort_addr();
+	mmap_merge_entries();
+	if (diff)
+		*diff = (int)g_mmap.length - inital_count;
+}
+
 static void mmap_sort_addr(void)
 {
 	for (long i = 0; (size_t)i < g_mmap.length - 1; i++) {
@@ -56,16 +172,7 @@ static void mmap_merge_entries(void)
 	}
 }
 
-static void mmap_normalize(int *diff)
-{
-	int inital_count = g_mmap.length;
-	mmap_sort_addr();
-	mmap_merge_entries();
-	if (diff)
-		*diff = (int)g_mmap.length - inital_count;
-}
-
-static int mb_mmap_parse(void)
+static int mmap_parse_mb_mmap(void)
 {
 	multiboot_memory_map_t *entry;
 #ifndef NDEBUG
@@ -134,7 +241,7 @@ static int mb_mmap_parse(void)
 	return 0;
 }
 
-static int mb_efi_mmap_parse(void)
+static int mmap_parse_efi_mmap(void)
 {
 	struct efi_mmap_entry *entry;
 #ifndef NDEBUG
@@ -227,7 +334,7 @@ static int mb_efi_mmap_parse(void)
 	return 0;
 }
 
-static int mb_basic_meminfo_parse(void)
+static int mmap_parse_mb_minfo(void)
 {
 #ifndef NDEBUG
 	if (g_mb_basic_minfo->type != MULTIBOOT_TAG_TYPE_BASIC_MEMINFO) {
@@ -248,106 +355,5 @@ static int mb_basic_meminfo_parse(void)
 	kprint("Falling back to basic meminfo\r\n");
 
 	return 0;
-}
-
-void mmap_set_efi_mmap(struct multiboot_tag_efi_mmap *mmap)
-{
-	g_mb_efi_mmap = mmap;
-}
-
-void mmap_set_mb_basic_minfo(struct multiboot_tag_basic_meminfo *minfo)
-{
-	g_mb_basic_minfo = minfo;
-}
-
-void mmap_set_mb_mmap(struct multiboot_tag_mmap *mmap)
-{
-	g_mb_mmap = mmap;
-}
-
-int mmap_parse(void)
-{
-	int ec = 0, ret = 0;
-
-	g_mmap.length = 0;
-
-	ec = mb_mmap_parse();
-	if (ec) {
-		kprint("Failed to parse multiboot memory map\r\n");
-		ret = -1;
-	}
-	ec = mb_efi_mmap_parse();
-	if (ec) {
-		kprint("Failed to parse EFI memory map\r\n");
-		ret = ret ? ret : 1;
-	}
-	if (g_mmap.length == 0) {
-		ec = mb_basic_meminfo_parse();
-		if (ec) {
-			kprint("Failed to parse multiboot basic meminfo\r\n");
-			panic();
-		}
-	}
-	mmap_normalize(NULL);
-	if (g_mmap.length == 0)
-		ret = -1;
-
-	return ret;
-}
-
-const struct pmmap *mmap_get(void)
-{
-	return &g_mmap;
-}
-
-int mmap_swap_entries(int lhs, int rhs)
-{
-	struct pmmap_entry tmp;
-	if ((size_t)lhs >= g_mmap.length || (size_t)rhs >= g_mmap.length)
-		return -1;
-
-	memcpy(&tmp, &g_mmap.entries[lhs], sizeof(struct pmmap_entry));
-	memcpy(&g_mmap.entries[lhs], &g_mmap.entries[rhs],
-		sizeof(struct pmmap_entry));
-	memcpy(&g_mmap.entries[rhs], &tmp, sizeof(struct pmmap_entry));
-
-	return 0;
-}
-
-int mmap_remove_entry(int i)
-{
-	if ((size_t)i >= g_mmap.length)
-		return -1;
-
-	if (i != (int)g_mmap.length - 1) {
-		size_t remaining = g_mmap.length - (i + 1);
-		memmove(&g_mmap.entries[i], &g_mmap.entries[i + 1],
-			 remaining * sizeof(struct pmmap_entry));
-	}
-	g_mmap.length--;
-	memset(&g_mmap.entries[g_mmap.length], 0, sizeof(struct pmmap_entry));
-
-	return 0;
-}
-
-int mmap_insert_entry(int i, const struct pmmap_entry *e)
-{
-	if (g_mmap.length >= PMMAP_MAX_ENTRIES || i > (int)g_mmap.length)
-		return -1;
-
-	if (i != (int)g_mmap.length) {
-		int remaining = (int)g_mmap.length - (i + 1);
-		memmove(&g_mmap.entries[i + 1], &g_mmap.entries[i],
-			remaining * sizeof(struct pmmap_entry));
-	}
-	memcpy(&g_mmap.entries[i], e, sizeof(struct pmmap_entry));
-	g_mmap.length++;
-
-	return 0;
-}
-
-int mmap_append_entry(const struct pmmap_entry *e)
-{
-	return mmap_insert_entry(g_mmap.length, e);
 }
 

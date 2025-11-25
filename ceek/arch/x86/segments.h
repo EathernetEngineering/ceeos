@@ -48,10 +48,10 @@ struct gdte_long {
 _Static_assert(sizeof(struct gdte_long) == 2 * sizeof(struct gdte),
 			   "Long mode segment descriptors must be 2 usual ones");
 
-struct __attribute__((__packed__)) gdt_descriptor {
+struct gdt_descriptor {
 	uint16_t size;
 	struct gdte *location;
-};
+} __attribute__((packed));
 
 static inline uint32_t gdte_get_limit(const struct gdte *entry)
 {

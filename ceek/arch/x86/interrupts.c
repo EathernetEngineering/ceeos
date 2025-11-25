@@ -4,8 +4,8 @@
 #include <arch/x86/interrupts.h>
 #include <arch/x86/segments.h>
 #include <arch/x86/port.h>
-#include <panic.h>
 #include <io/kprint.h>
+#include <panic.h>
 
 #include <itoa.h>
 #include <string.h>
@@ -165,7 +165,7 @@ void isr_handler(const struct isr_context *ctx)
 
 		case EXCEPTION_DF:
 			kprint("!!! Double fault\r\n");
-			panic();
+			interrupt_panic(ctx);
 			break;
 
 		case EXCEPTION_TS:
@@ -182,6 +182,7 @@ void isr_handler(const struct isr_context *ctx)
 
 		case EXCEPTION_GP:
 			kprint("General protection fault caught.\r\n");
+			interrupt_panic(ctx);
 			break;
 
 		case EXCEPTION_PF:
@@ -198,7 +199,7 @@ void isr_handler(const struct isr_context *ctx)
 
 		case EXCEPTION_MC:
 			kprint("!!! Machine check.\r\n");
-			panic();
+			interrupt_panic(ctx);
 			break;
 
 		case EXCEPTION_XM:
@@ -226,8 +227,8 @@ void isr_handler(const struct isr_context *ctx)
 			break;
 
 		default:
-			kprint("Unknown isr called");
-			panic();
+			kprint("Unknown isr called.\r\n");
+			interrupt_panic(ctx);
 	}
 }
 

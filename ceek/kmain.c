@@ -40,13 +40,13 @@ void kernel_main(unsigned int magic, uintptr_t multiboot_info) {
 	}
 	kprint("Parsed multiboot info: OK\r\n");
 	if ((ec = mmap_parse())) {
-		kprint("!!! Failed to get parse memory map!");
+		kprint("!!! Failed to parse memory map!");
 		fatal_spin();
 	}
-	if ((ec = acpi_init())) {
-		kprint("!!! Failed to get parse ACPI info!");
-		fatal_spin();
-	}
+	// if ((ec = acpi_init())) {
+	// 	kprint("!!! Failed to parse ACPI info!");
+	// 	fatal_spin();
+	// }
 
 	kprint("End of execution reached, entering eternal spin...\r\n");
 	fatal_spin();

@@ -58,14 +58,14 @@ int parse_boot_info(uintptr_t addr)
 				uintptr_t addr;
 				// TODO: Do the checksum and extract the read address from this copy
 				addr = (uintptr_t)((struct multiboot_tag_old_acpi *)tag)->rsdp;
-				acpi_set_rsdpv1(addr);
+				acpi_set_mb_rsdpv1(addr);
 			} break;
 
 			case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
 				uintptr_t addr;
 				// TODO: Do the checksum and extract the read address from this copy
 				addr = (uintptr_t)((struct multiboot_tag_new_acpi *)tag)->rsdp;
-				acpi_set_rsdpv2(addr);
+				acpi_set_mb_rsdpv2(addr);
 			} break;
 
 			case MULTIBOOT_TAG_TYPE_NETWORK:
