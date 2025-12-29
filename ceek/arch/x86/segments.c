@@ -32,7 +32,7 @@ struct gdte *gdte_set_limit(struct gdte *entry, uint32_t addr)
 	return entry;
 }
 
-void gdt_init(void)
+void __init_gdt(void)
 {
 	struct gdte entry;
 	memset(&entry, 0, sizeof(entry));

@@ -90,7 +90,7 @@ static inline struct gdte_long
 	return entry;
 }
 
-void gdt_init(void);
+void __init_gdt(void);
 
 uint16_t gdt_get_interrupt_identiry_data_segment(void);
 uint16_t gdt_get_interrupt_identity_code_segment(void);

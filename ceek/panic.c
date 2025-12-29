@@ -8,16 +8,31 @@
 #include <itoa.h>
 #include <string.h>
 
-static void print_padding(int n)
+static inline void print_padding(int n)
 {
 	for (int i = 0; i < n; i++)
 		serial_out(' ');
 }
 
-void panic(void) {
-	static const char *const msg = "!!! PANIC";
+void panic(const char *errmsg) {
+	static const char *const msg = "!!! PANIC: ";
 	kprint(msg);
-	fatal_spin();
+	kprint(errmsg);
+	serial_out('\r');
+	serial_out('\n');
+	spin_lock();
+}
+
+void panicf(const char *fmt, ...) {
+	static const char *const msg = "!!! PANIC: ";
+	kprint(msg);
+	va_list args;
+	va_start(args, fmt);
+	kvprintf(fmt, args);
+	va_end(args);
+	serial_out('\r');
+	serial_out('\n');
+	spin_lock();
 }
 
 void interrupt_panic(const struct isr_context *ctx)
@@ -40,7 +55,7 @@ void interrupt_panic(const struct isr_context *ctx)
 	 */
 	char str[64];
 	int strl;
-	kprint("!!! Registers:\r\n");
+	kprint("!!! INTERRUPT PANIC: Registers:\r\n");
 	kprint("!!! VEC: ");
 	strl = ltoa(ctx->interrupt_num, str, 16);
 	str[strl] = '\0';
@@ -135,6 +150,6 @@ void interrupt_panic(const struct isr_context *ctx)
 	strl = ltoa(ctx->rbp, str, 16);
 	strcpy(str + strl, "\r\n");
 	kprint(str);
-	panic();
+	spin_lock();
 }
 

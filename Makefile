@@ -151,8 +151,8 @@ ifeq ("$(BUILD_TYPE)","Release")
 CFLAGS += -O2
 LDFLAGS += -O2
 else ifeq ("$(BUILD_TYPE)","Debug")
-CFLAGS += -ggdb -Og -fno-omit-frame-pointer
-LDFLAGS += -g -Og
+CFLAGS += -g3 -O0 -fno-omit-frame-pointer
+LDFLAGS += -g -O0
 endif
 
 export HOSTCC HOSTCXX HOSTPKG_CONFIG AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP

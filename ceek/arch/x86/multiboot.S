@@ -4,9 +4,6 @@
 #define __ASSEMBLY__
 #include <boot/multiboot2.h>
 
-.extern _boot_text_start_phys
-.extern _edata_phys
-.extern _end_phys
 .extern multiboot_entry
 
 .set FLAGS, 0

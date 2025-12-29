@@ -6,6 +6,7 @@
 #include <arch/x86/port.h>
 #include <io/kprint.h>
 #include <panic.h>
+#include <vmm.h>
 
 #include <itoa.h>
 #include <string.h>
@@ -13,7 +14,7 @@
 static struct idt_descriptor g_idt_desc;
 static struct idte g_idt[UINT8_MAX];
 
-void idt_init(void)
+void __init_idt(void)
 {
 	struct idte entry;
 	memset(&entry, 0, sizeof(entry));
@@ -181,12 +182,13 @@ void isr_handler(const struct isr_context *ctx)
 			break;
 
 		case EXCEPTION_GP:
-			kprint("General protection fault caught.\r\n");
+			kprint("!!! General protection fault caught.\r\n");
 			interrupt_panic(ctx);
 			break;
 
 		case EXCEPTION_PF:
 			kprint("Page fault caught.\r\n");
+			vmm_handle_pf(ctx);
 			break;
 
 		case EXCEPTION_MF:
@@ -227,7 +229,7 @@ void isr_handler(const struct isr_context *ctx)
 			break;
 
 		default:
-			kprint("Unknown isr called.\r\n");
+			kprint("!!! Unknown isr called.\r\n");
 			interrupt_panic(ctx);
 	}
 }

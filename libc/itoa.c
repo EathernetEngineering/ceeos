@@ -2,7 +2,20 @@
 // Copyright (c) 2025 Chloe Eather
 
 #include <itoa.h>
-#include <stdint.h>
+
+static void reverse(char *buffer, int length)
+{
+	int start = 0;
+	int end = length - 1;
+	char temp;
+	while (start < end) {
+		temp = buffer[start];
+		buffer[start] = buffer[end];
+		buffer[end] = temp;
+		start++;
+		end--;
+	}
+}
 
 int itoa(int n, char *buffer, int radix)
 {
@@ -11,32 +24,53 @@ int itoa(int n, char *buffer, int radix)
 
 int ltoa(long n, char *buffer, int radix)
 {
+	int i, sign;
 	if (radix > 36 || radix < 2)
 		return 0;
 
-	if (n < 0) {
-		if (buffer) {
-			buffer[0] = '-';
-			++buffer;
-		}
-		n *= -1;
-	}
-	if (n == 0) {
-		buffer[0] = '0';
-		return 1;
-	}
+	if ((sign = n) < 0)
+		n = -n;
 
-	int64_t length = ((63 - __builtin_clzll((int64_t)n)) /
-		(63 - __builtin_clzll((int64_t)radix)));
-	for (long idx = length, digit; n > 0; idx--) {
-		digit = n % radix;
-		n /= radix;
-		if (digit < 10)
-			buffer[idx] = digit + '0';
+	i = 0;
+	do {
+		long remainder = n % radix;
+		if (remainder < 10)
+			buffer[i++] = remainder + '0';
 		else
-			buffer[idx] = (digit - 10) + 'A';
-	}
+			buffer[i++] = remainder + ('A' - 10);
+	} while ((n /= radix) > 0);
+	if (sign < 0)
+		buffer[i++] = '-';
+	buffer[i] = '\0';
 
-	return (int)length + 1;
+	reverse(buffer, i);
+
+	return i;
+}
+
+int uitoa(unsigned int n, char *buffer, int radix)
+{
+	return ultoa(n, buffer, radix);
+}
+
+int ultoa(unsigned long n, char *buffer, int radix)
+{
+	int i;
+	if (radix > 36 || radix < 2)
+		return 0;
+
+	i = 0;
+	do {
+		unsigned long remainder = n % radix;
+		if (remainder < 10)
+			buffer[i++] = remainder + '0';
+		else
+			buffer[i++] = remainder + ('A' - 10);
+	} while ((n /= radix) > 0);
+	buffer[i] = '\0';
+
+	reverse(buffer, i);
+
+	return i;
 }
 

@@ -19,7 +19,8 @@ enum pmmap_entry_type {
 	PMMAP_TYPE_EFI_RUNTIME_CODE = 5,
 	PMMAP_TYPE_EFI_RUNTIME_DATA = 6,
 	PMMAP_TYPE_MMIO = 7,
-	PMMAP_TYPE_UNACCEPTED = 8
+	PMMAP_TYPE_UNACCEPTED = 8,
+	PMMAP_TYPE_KERNEL_RESERVED = 9
 };
 
 struct pmmap_entry {
@@ -34,11 +35,9 @@ struct pmmap {
 	struct pmmap_entry entries[PMMAP_MAX_ENTRIES];
 };
 
-void mmap_set_efi_mmap(struct multiboot_tag_efi_mmap *mmap);
-void mmap_set_mb_basic_minfo(struct multiboot_tag_basic_meminfo *minfo);
-void mmap_set_mb_mmap(struct multiboot_tag_mmap *mmap);
-
-int mmap_parse(void);
+int __init_mmap_parse(struct multiboot_tag_basic_meminfo *g_mb_basic_minfo,
+		struct multiboot_tag_mmap *g_mb_mmap,
+		struct multiboot_tag_efi_mmap *g_mb_efi_mmap);
 
 const struct pmmap *mmap_get(void);
 

@@ -5,6 +5,7 @@
 
 #include <panic.h>
 #include <boot/multiboot2.h>
+#include <boot/symbols.h>
 #include <io/kprint.h>
 
 #include <itoa.h>
@@ -12,56 +13,51 @@
 #include <stdlib.h>
 #include <string.h>
 
-static struct multiboot_tag_efi_mmap *g_mb_efi_mmap;
-static struct multiboot_tag_basic_meminfo *g_mb_basic_minfo;
-static struct multiboot_tag_mmap *g_mb_mmap;
-
 static struct pmmap g_mmap;
 
 static void mmap_sort_addr(void);
 static void mmap_merge_entries(void);
-static int mmap_parse_mb_mmap(void);
-static int mmap_parse_efi_mmap(void);
-static int mmap_parse_mb_minfo(void);
 
-void mmap_set_efi_mmap(struct multiboot_tag_efi_mmap *mmap)
-{
-	g_mb_efi_mmap = mmap;
-}
+static int mmap_parse_mb_mmap(struct multiboot_tag_mmap *e820_mmap);
+static int mmap_parse_efi_mmap(struct multiboot_tag_efi_mmap *efi_mmap);
+static int mmap_parse_mb_minfo(struct multiboot_tag_basic_meminfo *basic_minfo);
 
-void mmap_set_mb_basic_minfo(struct multiboot_tag_basic_meminfo *minfo)
-{
-	g_mb_basic_minfo = minfo;
-}
-
-void mmap_set_mb_mmap(struct multiboot_tag_mmap *mmap)
-{
-	g_mb_mmap = mmap;
-}
-
-int mmap_parse(void)
+int __init_mmap_parse(struct multiboot_tag_basic_meminfo *basic_minfo,
+		struct multiboot_tag_mmap *e820_mmap,
+		struct multiboot_tag_efi_mmap *efi_mmap)
 {
 	int ec = 0, ret = 0;
+	struct pmmap_entry kernel_entry;
 
 	g_mmap.length = 0;
 
-	ec = mmap_parse_mb_mmap();
+	ec = mmap_parse_mb_mmap(e820_mmap);
 	if (ec) {
 		kprint("Failed to parse multiboot memory map\r\n");
 		ret = -1;
 	}
-	ec = mmap_parse_efi_mmap();
+	ec = mmap_parse_efi_mmap(efi_mmap);
 	if (ec) {
 		kprint("Failed to parse EFI memory map\r\n");
 		ret = ret ? ret : 1;
 	}
 	if (g_mmap.length == 0) {
-		ec = mmap_parse_mb_minfo();
+		ec = mmap_parse_mb_minfo(basic_minfo);
 		if (ec) {
-			kprint("Failed to parse multiboot basic meminfo\r\n");
-			panic();
+			panic("Failed to parse multiboot basic meminfo");
 		}
 	}
+
+	kernel_entry.base_paddress = (uintptr_t)_boot_phys_start;
+	kernel_entry.base_vaddress = (uintptr_t)_boot_phys_start;
+	kernel_entry.length = (uintptr_t)_kernel_phys_end - (uintptr_t)_kernel_phys_start;
+	kernel_entry.type = PMMAP_TYPE_KERNEL_RESERVED;
+	mmap_append_entry(&kernel_entry);
+	kernel_entry.base_paddress = (uintptr_t)_kernel_phys_start;
+	kernel_entry.base_vaddress = (uintptr_t)_kernel_virt_base;
+	kernel_entry.length = (uintptr_t)_kernel_phys_end - (uintptr_t)_kernel_phys_start;
+	mmap_append_entry(&kernel_entry);
+
 	mmap_normalize(NULL);
 	if (g_mmap.length == 0)
 		ret = -1;
@@ -172,22 +168,21 @@ static void mmap_merge_entries(void)
 	}
 }
 
-static int mmap_parse_mb_mmap(void)
+static int mmap_parse_mb_mmap(struct multiboot_tag_mmap *e820_mmap)
 {
 	multiboot_memory_map_t *entry;
 #ifndef NDEBUG
-	if (g_mb_mmap->type != MULTIBOOT_TAG_TYPE_MMAP) {
-		kprint("Unexpected tag provided to mb_mmap_parse()\r\n");
-		panic();
+	if (e820_mmap->type != MULTIBOOT_TAG_TYPE_MMAP) {
+		panic("Unexpected tag provided to mb_mmap_parse()");
 	}
 #endif
 	multiboot_memory_map_t *entries_end =
-		(multiboot_memory_map_t *)((uintptr_t)g_mb_mmap + g_mb_mmap->size);
-	size_t entry_size = (size_t)g_mb_mmap->entry_size;
+		(multiboot_memory_map_t *)((uintptr_t)e820_mmap + e820_mmap->size);
+	size_t entry_size = (size_t)e820_mmap->entry_size;
 	int i = g_mmap.length;
-	if (g_mb_mmap->entries >= entries_end)
+	if (e820_mmap->entries >= entries_end)
 		return -1;
-	for (entry = g_mb_mmap->entries; entry < entries_end;
+	for (entry = e820_mmap->entries; entry < entries_end;
 		entry = (multiboot_memory_map_t *)((uintptr_t)entry + entry_size))
 	{
 		struct pmmap_entry new_entry;
@@ -241,22 +236,21 @@ static int mmap_parse_mb_mmap(void)
 	return 0;
 }
 
-static int mmap_parse_efi_mmap(void)
+static int mmap_parse_efi_mmap(struct multiboot_tag_efi_mmap *efi_mmap)
 {
 	struct efi_mmap_entry *entry;
 #ifndef NDEBUG
-	if (g_mb_efi_mmap->type != MULTIBOOT_TAG_TYPE_EFI_MMAP) {
-		kprint("Unexpected tag provided to mb_efi_mmap_parse()\r\n");
-		panic();
+	if (efi_mmap->type != MULTIBOOT_TAG_TYPE_EFI_MMAP) {
+		panic("Unexpected tag provided to mb_efi_mmap_parse()");
 	}
 #endif
 	struct efi_mmap_entry *entries_end =
-		(struct efi_mmap_entry *)((uintptr_t)g_mb_efi_mmap + g_mb_efi_mmap->size);
-	size_t entry_size = (size_t)g_mb_efi_mmap->descr_size;
+		(struct efi_mmap_entry *)((uintptr_t)efi_mmap + efi_mmap->size);
+	size_t entry_size = (size_t)efi_mmap->descr_size;
 	int i = g_mmap.length;
-	if ((uintptr_t)g_mb_efi_mmap->efi_mmap >= (uintptr_t)entries_end)
+	if ((uintptr_t)efi_mmap->efi_mmap >= (uintptr_t)entries_end)
 		return -1;
-	for (entry = (struct efi_mmap_entry *)g_mb_efi_mmap->efi_mmap;
+	for (entry = (struct efi_mmap_entry *)efi_mmap->efi_mmap;
 		entry < entries_end;
 		entry = (struct efi_mmap_entry *)((uintptr_t)entry + entry_size))
 	{
@@ -334,12 +328,11 @@ static int mmap_parse_efi_mmap(void)
 	return 0;
 }
 
-static int mmap_parse_mb_minfo(void)
+static int mmap_parse_mb_minfo(struct multiboot_tag_basic_meminfo *basic_minfo)
 {
 #ifndef NDEBUG
-	if (g_mb_basic_minfo->type != MULTIBOOT_TAG_TYPE_BASIC_MEMINFO) {
-		kprint("Unexpected tag provided to mb_basic_meminfo_parse()\r\n");
-		panic();
+	if (basic_minfo->type != MULTIBOOT_TAG_TYPE_BASIC_MEMINFO) {
+		panic("Unexpected tag provided to mb_basic_meminfo_parse()");
 	}
 #endif
 	if (g_mmap.length != 0)
@@ -347,12 +340,15 @@ static int mmap_parse_mb_minfo(void)
 
 	g_mmap.length = 1;
 	g_mmap.entries[0].type = PMMAP_TYPE_USABLE;
-	g_mmap.entries[0].base_paddress = g_mb_basic_minfo->mem_lower;
-	g_mmap.entries[0].base_vaddress = g_mb_basic_minfo->mem_lower;
-	g_mmap.entries[0].length = g_mb_basic_minfo->mem_upper -
-		g_mb_basic_minfo->mem_lower;
+	g_mmap.entries[0].base_paddress = basic_minfo->mem_lower;
+	g_mmap.entries[0].base_vaddress = basic_minfo->mem_lower;
+	g_mmap.entries[0].length = basic_minfo->mem_upper -
+		basic_minfo->mem_lower;
 
 	kprint("Falling back to basic meminfo\r\n");
+	// The infrastructure to actually use such primitive information is not
+	// yet implemented, for now just panic in this situation.
+	panic("Not yet implemented!");
 
 	return 0;
 }

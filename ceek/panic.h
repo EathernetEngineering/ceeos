@@ -8,9 +8,12 @@
 
 void __attribute__((__noreturn__))
 	interrupt_panic(const struct isr_context *ctx);
-void __attribute__((__noreturn__)) panic(void);
+void __attribute__((__noreturn__))
+	panic(const char *errmsg);
+void __attribute__((__noreturn__))
+	panicf(const char *errmsg, ...);
 
-static inline void __attribute__((__noreturn__)) fatal_spin(void)
+static inline void __attribute__((__noreturn__)) spin_lock(void)
 {
 	__asm__ volatile (
 		"cli\n"

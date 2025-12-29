@@ -42,33 +42,68 @@ SECTIONS
 	.rodata ALIGN(4K) : AT(KERNEL_LMA + (ADDR(.rodata) - (ADDR(.text))))
 	{
 		_rodata_start = .;
-		*(.rodata)
+		*(.rodata .rodata.*)
 		*(.cdata)
 		_rodata_end = .;
 	}
 	.data ALIGN(4K) : AT(KERNEL_LMA + (ADDR(.data) - (ADDR(.text))))
 	{
 		_data_start = .;
-		*(.data)
+		*(.data .data.*)
 		_data_end = .;
 	}
-	_edata = ADDR(.data) + SIZEOF(.data);
 	.bss ALIGN(4K) :  AT(KERNEL_LMA + (ADDR(.bss) - (ADDR(.text))))
 	{
 		_bss_start = .;
 		*(COMMON)
-		*(.bss)
+		*(.bss .bss.*)
 		_bss_end = .;
 	}
-	_end = ADDR(.bss) + SIZEOF(.bss);
+	.eh_frame ALIGN(4K) : AT(KERNEL_LMA + (ADDR(.eh_frame) - (ADDR(.text))))
+	{
+		_eh_frame_start = .;
+		*(.eh_frame .eh_frame.*)
+		_eh_frame_end = .;
+	}
+	.end ALIGN(4K) : AT(KERNEL_LMA + (ADDR(.end) - (ADDR(.text))))
+	{
+		*(.init_array .init_array.*)
+		*(.fini_array .fini_array.*)
+		*(.ctors .ctors.*)
+		*(.dtors .dtors.*)
+		*(.data.rel.ro .data.rel.ro.*)
+		*(.rela .rela.*)
+		*(.rel .rel.*)
+		_end = .;
+	}
+	/DISCARD/ :
+	{
+		*(.gcc_except_table .gcc_except_table.*)
+		*(.comment)
+		*(.note .note.*)
+	}
 
-	_boot_text_start_phys = LOADADDR(.boot.text);
-	_edata_phys = LOADADDR(.data) + SIZEOF(.data);
-	_end_phys = LOADADDR(.bss) + SIZEOF(.bss);
-
+	_kernel_virt_end = .;
 	_kernel_virt_base = ADDR(.text);
+	_boot_phys_start = LOADADDR(.boot.text);
+	_boot_phys_end = LOADADDR(.boot.bss) + SIZEOF(.boot.bss);
 	_kernel_phys_start = KERNEL_LMA;
-	_kernel_phys_end = LOADADDR(.bss) + SIZEOF(.bss);
+	_kernel_phys_end = LOADADDR(.end) + SIZEOF(.end);
 	_kernel_virt_offset = _kernel_virt_base - _kernel_phys_start;
+
+	_boot_text_phys_start = LOADADDR(.boot.text);
+	_boot_text_phys_end = LOADADDR(.boot.text) + SIZEOF(.boot.text);
+	_boot_rodata_phys_start = LOADADDR(.boot.rodata);
+	_boot_rodata_phys_end = LOADADDR(.boot.rodata) + SIZEOF(.boot.rodata);
+	_boot_bss_phys_start = LOADADDR(.boot.bss);
+	_boot_bss_phys_end = LOADADDR(.boot.bss) + SIZEOF(.boot.bss);
+	_text_phys_start = LOADADDR(.text);
+	_text_phys_end = LOADADDR(.text) + SIZEOF(.text);
+	_rodata_phys_start = LOADADDR(.rodata);
+	_rodata_phys_end = LOADADDR(.rodata) + SIZEOF(.rodata);
+	_data_phys_start = LOADADDR(.data);
+	_data_phys_end = LOADADDR(.data) + SIZEOF(.data);
+	_bss_phys_start = LOADADDR(.bss);
+	_bss_phys_end = LOADADDR(.bss) + SIZEOF(.bss);
 }
 

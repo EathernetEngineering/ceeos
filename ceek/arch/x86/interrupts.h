@@ -98,7 +98,7 @@ static inline void idtr_set(struct idt_descriptor *d)
 	__asm__ volatile ("lidt %0" :: "m"(*d));
 }
 
-void idt_init(void);
+void __init_idt(void);
 
 void isr_handler(const struct isr_context *ctx);
 void irq_handler(const struct isr_context *ctx);

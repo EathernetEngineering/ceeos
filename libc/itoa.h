@@ -6,6 +6,8 @@
 
 int itoa(int i, char *buffer, int radix);
 int ltoa(long i, char *buffer, int radix);
+int uitoa(unsigned int i, char *buffer, int radix);
+int ultoa(unsigned long i, char *buffer, int radix);
 
 #endif
 

@@ -7,9 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-static struct acpi_rsdp *g_mb_rsdpv1;
-static struct acpi_rsdp *g_mb_rsdpv2;
-
 static struct acpi_rsdp *g_rsdp;
 static struct acpi_rsdp *g_rsdt;
 static struct acpi_fadt *g_fadt;
@@ -21,22 +18,24 @@ static enum acpi_sdt_type get_sdt_signature(struct acpi_sdt_header *h);
 static int parse_rsdt(void);
 static int parse_xsdt(void);
 
-int acpi_init(void)
+int __init_acpi(uintptr_t rsdpv1_phys, uintptr_t rsdpv2_phys)
 {
+	struct acpi_rsdp *rsdpv1 = (struct acpi_rsdp *)rsdpv1_phys;
+	struct acpi_rsdp *rsdpv2 = (struct acpi_rsdp *)rsdpv2_phys;
 	struct acpi_rsdp *rsdp = NULL;
 	uint8_t checksum = 0;
 	g_rsdt = NULL;
 	g_fadt = NULL;
 	g_madt = NULL;
 	// TODO: Parse ACPI info
-	if (g_mb_rsdpv2 &&
-		(strncmp(g_mb_rsdpv2->signature, ACPI_RSDP_SIGNATURE, 8) == 0))
+	if (rsdpv2 &&
+		(strncmp(rsdpv2->signature, ACPI_RSDP_SIGNATURE, 8) == 0))
 	{
-		rsdp = g_mb_rsdpv2;
-	} else if (g_mb_rsdpv1 &&
-		(strncmp(g_mb_rsdpv1->signature, ACPI_RSDP_SIGNATURE, 8) == 0))
+		rsdp = rsdpv2;
+	} else if (rsdpv1 &&
+		(strncmp(rsdpv1->signature, ACPI_RSDP_SIGNATURE, 8) == 0))
 	{
-		rsdp = g_mb_rsdpv1;
+		rsdp = rsdpv1;
 	} else {
 		rsdp = search_for_rsdp();
 	}
@@ -65,16 +64,6 @@ int acpi_init(void)
 	}
 
 	return 0;
-}
-
-void acpi_set_mb_rsdpv1(uintptr_t addr)
-{
-	g_mb_rsdpv1 = (struct acpi_rsdp *)addr;
-}
-
-void acpi_set_mb_rsdpv2(uintptr_t addr)
-{
-	g_mb_rsdpv2 = (struct acpi_rsdp *)addr;
 }
 
 static struct acpi_rsdp *search_for_rsdp(void)

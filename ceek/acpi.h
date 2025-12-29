@@ -236,10 +236,8 @@ struct acpi_madt {
 	struct madt_entry entires[];
 } __attribute__((packed));
 
-void acpi_set_mb_rsdpv1(uintptr_t addr);
-void acpi_set_mb_rsdpv2(uintptr_t addr);
-
-int acpi_init(void);
+__attribute__((warn_unused_result))
+int __init_acpi(uintptr_t rsdpv1_phys, uintptr_t rsdpv2_phys);
 
 #endif
 
