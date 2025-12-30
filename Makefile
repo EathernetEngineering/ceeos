@@ -5,40 +5,39 @@ this-makefile := $(lastword $(MAKEFILE_LIST))
 abs_srctree := $(realpath $(dir $(this-makefile)))
 abs_objtree = $(CURDIR)
 
+srctree ?= $(abs_srctree)
+objtree ?= $(abs_objtree)
+
 $(if $(filter __%, $(MAKECMDGOALS)), \
-	$(error targets prefixed with '__' are for internal use only))
+    $(error targets prefixed with '__' are for internal use only))
 
 PHONY += __all
 __all:
 
 ifneq ($(sub_make_done),1)
-MAKEFLAGS += rR
+MAKEFLAGS += rR --no-print-directory
 
 ifeq ("$(origin O)", "command line")
 KBUILD_OUTPUT := $(O)
 endif
 
 ifneq ($(KBUILD_OUTPUT),)
-$(shell mkdir -p "$(KBUILD_OUTPUT)")
-abs_objtree := $(realpath $(KBUILD_OUTPUT))
-$(if $(abs_objtree),,$(error Failed to create output directory "$(KBUILD_OUTPUT)"))
+    $(shell mkdir -p "$(KBUILD_OUTPUT)")
+    abs_objtree := $(realpath $(KBUILD_OUTPUT))
+    $(if $(abs_objtree),,$(error Failed to create output directory "$(KBUILD_OUTPUT)"))
+    objtree := $(abs_objtree)
 endif
 
 ifneq ($(words $(subst :, ,$(abs_srctree))), 1)
-$(error Source directory cannot contain spaces or colons)
+    $(error Source directory cannot contain spaces or colons)
 endif
 
 export sub_make_done := 1
 endif # !sub_make_done
 
-ifeq ($(abs_objtree),$(CURDIR))
-no-print-directory := --no-print-directory
-else
-need-sub-make := 1
-endif
-
-ifeq ($(filter --no-print-directory, $(MAKEFLAGS)),)
-need-sub-make := 1
+need-sub-make :=
+ifneq ($(realpath $(abs_objtree)),$(realpath $(CURDIR)))
+    need-sub-make := 1
 endif
 
 ifeq ($(need-sub-make),1)
@@ -47,63 +46,27 @@ $(filter-out $(this-makefile), $(MAKECMDGOALS)) __all: __sub-make
 	@:
 
 __sub-make:
-	$(MAKE) $(no-print-directory) -C $(abs_objtree) \
-		-f$(abs_srctree)/Makefile $(MAKECMDGOALS)
+	$(MAKE) -C "$(abs_objtree)" -f"$(abs_srctree)/Makefile" \
+		srctree="$(srctree)" objtree="$(objtree)" \
+		KBUILD_OUTPUT="$(KBUILD_OUTPUT)" $(MAKECMDGOALS)
 
 else # need-sub-make
 ifeq ($(abs_srctree),$(CURDIR))
-building_out_of_srctree :=
+    building_out_of_srctree :=
 else
-export building_out_of_srctree := 1
+    export building_out_of_srctree := 1
 endif
 
-srcroot := $(abs_srctree)
-
-ifeq ($(srcroot),$(CURDIR))
-srcroot := .
-else ifeq ('$(srcroot)/','$(dir $(CURDIR))')
-srcroot := ..
-endif
-
-export srctree := $(srcroot)
-
-ifdef building_out_of_srctree
-export VPATH := $(srcroot)
-else
-VPATH :=
-endif
-
-SUBPROJECTS := ceek libc
-CLEAN_SUBPROJECTS := $(addprefix clean-,$(SUBPROJECTS))
-MRPROPER_SUBPROJECTS := $(addprefix mrproper-,$(SUBPROJECTS))
-
-
-compile_commands-targets := compile_commands
-compile_commands-build :=
-
-ifneq ($(filter $(compile_commands-targets),$(MAKECMDGOALS)),)
-compile_commands-build := 1
-endif
-
-ifdef compile_commands-build
-PHONY += $(MAKECMDGOALS) $(KBUILD_OUTPUT)/compile_commands.json
-$(MAKECMDGOALS): $(KBUILD_OUTPUT)/compile_commands.json
-
-$(KBUILD_OUTPUT)/compile_commands.json:
-	bear --output $@ -- $(MAKE) -f$(srctree)/Makefile \
-		$(filter-out $(compile_commands-targets),$(MAKECMDGOALS))
-
-else # compile_commands-build
-clean-targets := clean $(CLEAN_SUBPROJECTS) mrproper $(MRPROPER_SUBPROJECTS)
+clean-targets := clean mrproper
 
 clean_build :=
 mixed-build :=
 
-ifneq ($(filter $(clean-targets),(MAKECMDGOALS)),)
-clean-build := 1
-ifneq ($(filter-out $(clean-targets),$(MAKECMDGOALS),)
-mixed-build := 1
-endif
+ifneq ($(filter $(clean-targets),$(MAKECMDGOALS)),)
+    clean-build := 1
+    ifneq ($(filter-out $(clean-targets),$(MAKECMDGOALS)),)
+        mixed-build := 1
+    endif
 endif
 
 ifdef mixed-build
@@ -118,7 +81,7 @@ __build_one_by_one:
 
 else # mixed-build
 
--include config.mk
+OBJTREE_MARKER := $(srctree)/.objtree
 
 TARGET          ?= x86_64-elf
 CROSS_COMPILE   ?= x86_64-elf-
@@ -140,12 +103,12 @@ OBJDUMP         := $(CROSS_COMPILE)objdump
 AWK             := awk
 BASH            := bash
 
-DEPFLAGS := -MMD -MD -MP
 WARNINGFLAGS := -Wall -Wextra -Werror -Wpedantic -Wswitch-enum
 CFLAGS := -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -fno-builtin \
 		  -std=c11 -fno-strict-aliasing -fno-pic -mcmodel=kernel\
-		  $(DEPFLAGS) $(WARNINGFLAGS)
-LDFLAGS := -nostdlib -nostartfiles
+		  $(WARNINGFLAGS) -I"$(srctree)/include"
+ASFLAGS ?= $(CFLAGS)
+LDFLAGS := -no-pie -nostdlib -nostartfiles
 
 ifeq ("$(BUILD_TYPE)","Release")
 CFLAGS += -O2
@@ -156,89 +119,86 @@ LDFLAGS += -g -O0
 endif
 
 export HOSTCC HOSTCXX HOSTPKG_CONFIG AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP
-export AWK BASH DEPFLAGS WARNINGFLAGS CFLAGS LDFLAGS
+export AWK BASH DEPFLAGS WARNINGFLAGS CFLAGS ASFLAGS LDFLAGS
 
 PHONY += outputmakefile
 ifdef building_out_of_srctree
 outputmakefile:
-	@if [ -f $(srctree)/config.mk ]; then \
+	@if [ -f "$(OBJTREE_MARKER)" ] && [ "$$(cat $(OBJTREE_MARKER))" != "$(abs_objtree)" ]; then \
 		echo >&2 "***"; \
-		echo >&2 "*** The source tree is not clean, please run 'make mrproper' in"; \
-		echo >&2 "*** '$(abs_srctree)' to clean"; \
+		echo >&2 "*** $(abs_objtree)"; \
+		cat $(OBJTREE_MARKER); \
+		echo >&2 "***"; \
+		echo >&2 "*** Out of source build exists, please run 'make mrproper' in"; \
+		echo >&2 "*** '$(abs_srctree)' to clean or build from existing dir"; \
 		echo >&2 "***"; \
 		false; \
 	fi
 	@{ \
 		echo "# Automatically generated by $(abs_srctree)/Makefile: don't edit"; \
-		echo "export KBUILD_OUTPUT = $(CURDIR)"; \
+		echo "export KBUILD_OUTPUT := $(abs_objtree)"; \
+		echo "export BUILD_TYPE := $(BUILD_TYPE)"; \
 		echo "include $(abs_srctree)/Makefile"; \
 	} > Makefile
 	@echo "Generated build stub Makefile"
 	@test -e .gitignore || \
 	{ echo "#this is a build directory"; echo "*"; } > .gitignore
+
+__all: $(OBJTREE_MARKER)
 endif
+
+build := -f $(srctree)/scripts/Makefile.build obj
+clean := -f $(srctree)/scripts/Makefile.clean obj
+
+CEEK := $(objtree)/ceek.elf
+CEEK_DBG := $(objtree)/ceek.debug
+CEEK_STR := $(objtree)/ceek.x86_64
+CEEK_MAP := $(objtree)/ceek.map
+
+core-dirs := arch/x86 boot io kernel lib
+core-objs := $(addprefix $(objtree)/,$(addsuffix /built-in.o,$(core-dirs)))
 
 PHONY += all
 all: __all
 
-__all: outputmakefile $(CONFIG_MK) subprojects
+__all: outputmakefile $(CEEK) $(CEEK_DBG) $(CEEK_STR)
 
-config.mk:
-	@{ \
-		echo "# Automatically generated by $(abs_srctree)/Makefile: don't edit"; \
-		echo "TARGET ?= $(TARGET)"; \
-		echo "CROSS_COMPILE ?= $(CROSS_COMPILE)"; \
-		echo "BUILD_TYPE ?= $(BUILD_TYPE)"; \
-	} > config.mk
-	@echo "Generated $(KBUILD_OUTPUT)/config.mk"
+$(OBJTREE_MARKER):
+	@echo "$(abs_objtree)" > $@
+	@echo "Generated $(OBJTREE_MARKER)"
 
-PHONY += subprojects $(SUBPROJECTS)
-subprojects: $(SUBPROJECTS)
+$(objtree)/%/built-in.o:
+	$(MAKE) $(build)=$* srctree="$(srctree)" objtree="$(objtree)"
 
-libk:
-	$(MAKE) -f$(srctree)/libc/Makefile O="libc" \
-		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" libk
+.PHONY: $(core-dirs)
+$(core-dirs):
+	$(MAKE) $(build)=$@ srctree="$(srctree)" objtree="$(objtree)"
 
-ceek: libk
-	$(MAKE) -f$(srctree)/ceek/Makefile O="ceek" \
-		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" ceek
+$(CEEK): $(core-objs)
+	$(CC) $(LDFLAGS) -Wl,-T,$(srctree)/link.ld,-z,max-page-size=4096 \
+		-Wl,--Map=$(CEEK_MAP) -o $@ $(core-objs)
 
-libc: ceek
-	$(MAKE) -f$(srctree)/libc/Makefile O="libc" \
-		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" libc
 
-PHONY += clean $(CLEAN_SUBPROJECTS)
-clean: $(CLEAN_SUBPROJECTS)
+$(CEEK_DBG): $(CEEK)
+	$(OBJCOPY) --only-keep-debug $< $@
 
-$(CLEAN_SUBPROJECTS):
-	@$(MAKE) -f$(srctree)/$(subst clean-,,$@)/Makefile \
-		O="$(subst clean-,,$@)" \
-		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" clean
+$(CEEK_STR): $(CEEK) $(CEEK_DBG)
+	$(STRIP) --strip-debug --strip-unneeded -o $(CEEK_STR) $(CEEK)
+	$(OBJCOPY) --add-gnu-debuglink=$(CEEK_DBG) $(CEEK_STR)
 
-PHONY += mrproper $(MRPROPER_SUBPROJECTS)
-mrproper: clean $(MRPROPER_SUBPROJECTS)
-	rm -rf config.mk
-	@if [ "$(KBUILD_OUTPUT)" != "$(srctree)" ]; then \
-		if [ -f "$(KBUILD_OUTPUT)/Makefile" ]; then \
-			rm -f "$(KBUILD_OUTPUT)/Makefile"; \
-			echo "Removing build stub Makefile"; \
-		fi; \
-		if [ -f "$(KBUILD_OUTPUT)/compile_command.json" ]; then \
-			rm -f "$(KBUILD_OUTPUT)/compile_command.json"; \
-			echo "Removing compile_command.json"; \
-		fi; \
-	fi;
+PHONY += clean
+clean:
+	rm -f $(CEEK) $(CEEK_DBG) $(CEEK_STR) $(CEEK_MAP)
+	@for d in $(core-dirs); do \
+		$(MAKE) $(clean)=$$d srctree="$(srctree)" objtree="$(objtree)"; \
+	done
 
-$(MRPROPER_SUBPROJECTS):
-	$(MAKE) -f$(srctree)/$(subst mrproper-,,$@)/Makefile \
-		O=$(subst mrproper-,,$@) \
-		srctree="$(srctree)" objtree="$(KBUILD_OUTPUT)" mrproper
-
-export DEPFILES := $(abspath $(wildcard $(KBUILD_OUTPUT)/.deps/*.d))
--include $(DEPFILES)
+PHONY += mrproper
+mrproper: clean
+	rm -f $(srctree)/.objtree
+	if [ "$(objtree)" != "$(srctree)" ]; then rm -rf $(objtree); fi
 
 endif # mixed-build
-endif # compile_commands-build
 endif # need-sub-make
 
 .PHONY: $(PHONY)

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Chloe Eather
+
+OBJS :=
+SUBDIRS :=
+
+ifndef srctree
+$(error srctree is not set)
+endif
+ifndef objtree
+$(error objtree is not set)
+endif
+ifndef obj
+$(error obj is not set)
+endif
+
+srcdir := $(srctree)/$(obj)
+objdir := $(objtree)/$(obj)
+
+ifeq ($(wildcard $(srcdir)/Makefile),)
+.PHONY: clean
+clean:
+	@:
+
+else
+include $(srcdir)/Makefile
+
+objs-y := $(strip $(OBJS))
+subdirs-y := $(strip $(SUBDIRS))
+
+obj-y := $(addprefix $(objdir)/,$(objs-y))
+dep-y := $(patsubst %.o,%.d,$(obj-y))
+
+.PHONY: clean __subdirs
+clean: __subdirs
+	rm -f $(obj-y) $(dep-y) $(objdir)/built-in.o
+
+__subdirs:
+ifneq ($(subdirs-y),)
+	for d in $(subdirs-y); do \
+		$(MAKE) -f $(srctree)/scripts/Makefile.clean \
+			srctree="$(srctree)" objtree="$(objtree)" \
+			obj="$(obj)/$$d" clean; \
+	done
+endif # subdirs-y exist
+endif # Makefile exists
+

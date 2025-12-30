@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Chloe Eather
+
+OBJS :=
+SUBDIRS :=
+
+ifndef srctree
+$(error srctree is not set)
+endif
+ifndef objtree
+$(error objtree is not set)
+endif
+ifndef obj
+$(error obj is not set)
+endif
+
+srcdir := $(srctree)/$(obj)
+objdir := $(objtree)/$(obj)
+
+ifeq ($(wildcard $(srcdir)/Makefile),)
+$(error No Makefile in $(srcdir))
+endif
+include $(srcdir)/Makefile
+
+objs-y := $(strip $(OBJS))
+subdirs-y := $(strip $(SUBDIRS))
+
+obj-y := $(addprefix $(objdir)/,$(objs-y))
+dep-y := $(patsubst %.o,%.d,$(obj-y))
+
+subdir-builtins := $(addprefix $(objdir)/,$(addsuffix /built-in.o,$(subdirs-y)))
+
+depflags = -MMD -MP -MF $(@:.o=.d)
+
+.PHONY: all built-in.o __subdirs
+all: __subdirs $(objdir)/built-in.o
+
+__subdirs:
+ifneq ($(subdirs-y),)
+	@for d in $(subdirs-y); do \
+		$(MAKE) -f $(srctree)/scripts/Makefile.build \
+			srctree="$(srctree)" objtree="$(objtree)" \
+			obj="$(obj)/$$d"; \
+	done
+endif
+
+$(objdir)/%.o: $(srcdir)/%.c | $(objdir)/
+	$(CC) $(CFLAGS) $(depflags) -c -o $@ $<
+
+$(objdir)/%.o: $(srcdir)/%.S | $(objdir)/
+	$(CC) $(ASFLAGS) $(depflags) -c -o $@ $<
+
+$(objdir)/built-in.o: __subdirs $(obj-y) $(subdir-builtins)
+	$(LD) -r -o $@ $(obj-y) $(subdir-builtins)
+
+$(objdir)/:
+	mkdir -p "$@"
+
+-include $(dep-y)
+
